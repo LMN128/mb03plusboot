@@ -1,0 +1,96 @@
+; zobrazi sprite dle cisla v A pozice a data spritu jsou v tabulce na adrese HL; priklad nakonci!!!
+; nebo DE-pozice, HL-adresa (rutina OK)
+; zobrazuje sprites z programu SpriteEdit typ 2
+	module sprite2
+SP_      
+;        ld   hl,SP_TAB
+         add  a,a
+         add  a,a
+         ld   d,0
+         ld   e,a
+         add  hl,de
+         ld   e,(hl)
+         inc  hl
+         ld   d,(hl)
+         inc  hl
+   			 push de
+         ld   e,(hl)
+         inc  hl
+         ld   d,(hl)
+         ex   de,hl
+         pop de
+         
+
+;------------------------------
+OK       
+          ld b,(hl)
+					inc hl
+          ld c,(hl)
+          inc hl
+         ld   a,d
+         rrca
+         rrca
+         rrca
+         and  %11100000
+         add  a,e
+         ld   e,a
+         ld   a,d
+         and  24
+         or   64
+         ld   d,a
+
+OK_SEM   push de
+         push bc
+         ld   a,d
+         rrca
+         rrca
+         rrca
+         and  3
+         or   88
+         ld   d,a
+
+OK_RADE1 ;call DE_BAJT
+          ld a,(hl)
+          inc hl
+
+         ld   (de),a
+         inc  e
+         dec  c
+         jr   nz,OK_RADE1
+         pop  bc
+         pop  de
+
+OK_DALSI push de
+         push bc
+OK_RADEK ;call DE_BAJT
+          ld a,(hl)
+          inc hl
+
+         ld   (de),a
+         inc  e
+         dec  c
+         jr   nz,OK_RADEK
+         pop  bc
+         pop  de
+         inc  d
+         ld   a,d
+         and  7
+         jr   nz,OK_DALSI
+         ld   a,32
+         add  a,e
+         ld   e,a
+         ccf
+         sbc  a,a
+         and  -8
+         add  a,d
+         ld   d,a
+         djnz OK_SEM
+         ret
+
+/*
+SP_TAB   defw #0B00  ;kam zobrazit
+         defw 32768 ;odkud
+
+
+*/
+	endmodule

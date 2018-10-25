@@ -1,0 +1,140 @@
+	MODULE boot
+	DEVICE ZXSPECTRUM48
+	OUTPUT	boot.cod
+
+; --------------- V A R I A B L E S ---------------------------------------			
+DMA 		equ #0B
+zvukcompile	equ 60000 ; adresa zkopilovaneho zvuku 
+; --------------- M A I N C O D E ---------------------------------------
+			org 49152
+//			org 0
+boot		di
+			ld sp,0
+			ld	a, #C3		; Z80DMA command: WR6: Reset
+			out	(DMA), a
+			xor	a
+			ld	i, a
+
+;			call ramtest.ramtest
+			ld hl,ramcodeinrom
+			ld de,ramcode
+			ld bc,endramcode-ramcode
+			ldir
+;			jp 49152
+			jp ramcode
+	INCLUDE "ramtest.a80"			 ; running in rom
+ramcodeinrom	
+;			DISP 49152		
+ramcode			
+			call cls.CLS
+			ld   a,71
+			ld   HL,22528
+			ld   DE,22529
+			ld   BC,767
+			ld   (HL),a
+			ldir
+			
+			ld   hl,TEXT1
+			ld   bc,#0107
+//			call t42.T42_TEXT
+			
+			ld	bc,#0728
+			ld	(txy.cursor),bc
+			ld	hl,TEXT1
+			call txy.txy  
+			
+			ld de,#040A
+	        ld hl,CaroLogo
+			call sprite2.OK
+			
+			
+			
+;carymary         
+			 ld bc,#0527
+			 ld de,#05d1
+			 call draw_jugo.DRAW
+			 ld bc,#1027
+			 ld de,#10d1
+			 call draw_jugo.DRAW
+
+			ld	bc,#B8Cd
+			ld	(txy.cursor),bc
+			ld	hl,TEXT0
+			call txy.txy         
+			
+			call iinkey.ANYKEY
+			
+			ld hl,easyhdd
+			ld de,32768
+			ld bc,easyhddend-easyhdd
+			ldir
+			
+			ld	bc,#B8D0
+			ld	(txy.cursor),bc
+			ld	hl,TEXT2
+			call txy.txy
+			
+			call 32768
+/*
+1			call iinkey.IINKEY
+			jr z,1B
+			cp 'n'
+			jr nz,1B
+*/			
+			ld a,64
+			out (23),a
+			jp 102 //NMI
+			
+			ei
+			ret
+; --------------- L I B R A R I E S ---------------------------------------	
+	
+//INCLUDE "nasobeniHLDE.a80"
+	INCLUDE "draw-jugo.a80"
+	INCLUDE "cls.a80"
+	INCLUDE "iinkey.a80"
+	INCLUDE "t42.a80"
+
+	INCLUDE "txy.a80"
+CaroLogo
+	INCBIN "CaroLogo.bin"
+	INCLUDE "sprite2.a80"
+/*
+NewdimLogo
+	INCBIN "NewdimLogo.bin"
+
+eightbc_i
+	INCBIN "8BC_I.cde"
+EasyLogoSmall
+	INCBIN "EasyLogoSmall.bin"
+*/	
+easyhdd	
+	INCBIN "easyhdd.out"
+easyhddend
+/*
+zvuk
+	INCBIN "ZVUK.BIN"
+zvukend
+*/
+
+/*@SP_TAB
+@TAB_sprite1
+		 DEFB 10,4
+         DEFW CaroLogo
+         DEFB 24,20
+         DEFW NewdimLogo
+         defb 0,21
+         defw eightbc_i
+         defb 1,2
+         defw eightbc_i
+         defb 25,2
+         defw EasyLogoSmall
+*/		 
+; --------------- T E X T---------------------------------------		 
+TEXT0    dc 16,7,"any key"
+TEXT1    dc 16,69,"MB03+ Ultimate firmware 1.28"
+TEXT2	 dc 16,0,"loading ..."
+endramcode			
+	ENDMODULE		
+	savesna "boot.sna",49152	
+	

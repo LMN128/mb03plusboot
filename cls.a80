@@ -1,0 +1,10 @@
+	module cls
+CLS      LD   HL,16384
+         LD   DE,16385
+         LD   BC,6911
+         LD   (HL),L
+         LDIR
+         XOR  A
+         OUT  (254),A
+         RET
+	endmodule

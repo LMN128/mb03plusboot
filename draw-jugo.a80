@@ -1,0 +1,148 @@
+;rutina na kresleni cary. pochazi z nejakeho jugoslavskeho casaku
+;BC-ODKUD DE-KAM NAKRESLI CARU
+;POCATEK VLEVO NAHORE (0,0)
+	module draw_jugo
+DRAW     LD   A,D
+         CP   192
+         RET  NC
+         LD   A,B
+         CP   192
+         RET  NC
+         CCF
+         RRA
+         SCF
+         RRA
+         AND  A
+         RRA
+         XOR  B
+         AND  248
+         XOR  B
+         LD   H,A
+         LD   A,C
+         RLCA
+         RLCA
+         RLCA
+         LD   L,A
+         AND  56
+         CPL
+         LD   (LAB+1),A
+         XOR  A
+LAB      SET  0,A
+         EX   AF,AF'
+         LD   A,L
+         XOR  B
+         AND  199
+         XOR  B
+         RLCA
+         RLCA
+         LD   L,A
+         LD   A,B
+         SUB  D
+         LD   B,0
+         JR   NC,N1
+         NEG
+         INC  B
+N1       LD   D,A
+         LD   A,C
+         SUB  E
+         LD   C,0
+         JR   NC,N2
+         NEG
+         INC  C
+N2       LD   E,A
+         EX   AF,AF'
+         PUSH AF
+         OR   (HL)
+         LD   (HL),A
+         POP  AF
+         EX   AF,AF'
+         OR   D
+         RET  Z
+         PUSH HL
+         LD   A,D
+         CP   E
+         JR   C,POX
+         LD   HL,LEVO
+         BIT  0,C
+         JR   Z,Y1
+         LD   HL,DESNO
+Y1       LD   (DIA+1),HL
+         LD   HL,GORE
+         BIT  0,B
+         JR   Z,Y2
+         LD   HL,DOLE
+Y2       LD   (NAST+1),HL
+         LD   C,D
+N3       SRL  C
+         LD   HX,D
+         EX   AF,AF'
+         LD   B,A
+         POP  HL
+LOOP     LD   A,C
+         SUB  E
+         LD   C,A
+         JR   NC,NAST
+         ADD  A,D
+         LD   C,A
+DIA      CALL 0
+NAST     CALL 0
+         LD   A,B
+         OR   (HL)
+         LD   (HL),A
+         DEC  HX
+         JR   NZ,LOOP
+         RET
+POX      LD   HL,LEVO
+         BIT  0,C
+         JR   Z,X1
+         LD   HL,DESNO
+X1       LD   (NAST+1),HL
+         LD   HL,GORE
+         BIT  0,B
+         JR   Z,X2
+         LD   HL,DOLE
+X2       LD   (DIA+1),HL
+         LD   C,E
+         LD   E,D
+         LD   D,C
+         JR   N3
+DESNO    RRC  B
+         RET  NC
+         INC  HL
+         RET
+LEVO     RLC  B
+         RET  NC
+         DEC  HL
+         RET
+DOLE     INC  H
+         LD   A,H
+         AND  7
+         RET  NZ
+         LD   A,H
+         SUB  8
+         LD   H,A
+         LD   A,L
+         ADD  A,32
+         LD   L,A
+         RET  NC
+         LD   A,H
+         ADD  A,8
+         LD   H,A
+         RET
+GORE     DEC  H
+         LD   A,H
+         CPL
+         AND  7
+         RET  NZ
+         LD   A,H
+         ADD  A,8
+         LD   H,A
+         LD   A,L
+         SUB  32
+         LD   L,A
+         RET  NC
+         LD   A,H
+         SUB  8
+         LD   H,A
+         RET
+	endmodule

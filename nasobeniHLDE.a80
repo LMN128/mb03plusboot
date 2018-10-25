@@ -1,0 +1,23 @@
+;; nasobeni HL*DE
+;; vystup IXHL
+
+module nasobeniHLDE
+nasob			ld b,16
+					ld a,h
+					ld c,l
+					ld ix,0
+				  ld hl,0
+nasob2		add ix,ix
+					add hl,hl
+					jr nc,nasob4
+					inc ix
+nasob4		rl c
+					rla
+					jr nc,nasob3
+					add hl,de
+					jr nc,nasob3
+					inc ix
+nasob3		djnz nasob2
+					ret
+endmodule										
+																  

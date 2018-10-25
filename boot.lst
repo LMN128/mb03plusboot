@@ -1,0 +1,1615 @@
+001   0000             	MODULE boot
+002   0000             	DEVICE ZXSPECTRUM48
+003   0000             	OUTPUT	boot.cod
+004   0000             
+005   0000             ; --------------- V A R I A B L E S ---------------------------------------			
+006   0000             DMA 		equ #0B
+007   0000             zvukcompile	equ 60000 ; adresa zkopilovaneho zvuku 
+008   0000             ; --------------- M A I N C O D E ---------------------------------------
+009   0000             			org 49152
+010   C000             //			org 0
+011   C000 F3          boot		di
+012   C001 31 00 00    			ld sp,0
+013   C004 3E C3       			ld	a, #C3		; Z80DMA command: WR6: Reset
+014   C006 D3 0B       			out	(DMA), a
+015   C008 AF          			xor	a
+016   C009 ED 47       			ld	i, a
+017   C00B             
+018   C00B             ;			call ramtest.ramtest
+019   C00B 21 53 C0    			ld hl,ramcodeinrom
+020   C00E 11 53 C0    			ld de,ramcode
+021   C011 01 48 32    			ld bc,endramcode-ramcode
+022   C014 ED B0       			ldir
+023   C016             ;			jp 49152
+024   C016 C3 53 C0    			jp ramcode
+025   C019             	INCLUDE "ramtest.a80"			 ; running in rom
+001+  C019             ;LMN128 - Jan Kucera Zlin
+002+  C019             ;it's comes from legacy MB02+ bootloader version 003
+003+  C019             	module ramtest
+004+  C019 AF          ramtest xor a
+005+  C01A 21 00 40    		ld 	hl, #4000
+006+  C01D 11 08 06    		ld	de, #0608
+007+  C020 01 FD 7F    		ld	bc, 32765
+008+  C023 ED 79       		out	(c), a
+009+  C025             
+010+  C025             ram_test_loop: 								
+011+  C025 2F          		cpl
+012+  C026 77          		ld	(hl), a
+013+  C027 AE          		xor	(hl)
+014+  C028 77          		ld	(hl), a
+015+  C029 AE          		xor	(hl)
+016+  C02A 20 19       		jr	nz, ram_fault
+017+  C02C 2C          		inc	l
+018+  C02D 20 F6       		jr	nz, ram_test_loop
+019+  C02F 24          		inc	h
+020+  C030 20 F3       		jr	nz, ram_test_loop
+021+  C032 26 C0       		ld	h, #C0				; RAM pages start address
+022+  C034 7B          		ld	a, e
+023+  C035 BA          		cp	d
+024+  C036 20 01       		jr	nz, no_page5		; Don't test RAM page 5 again
+025+  C038 1D          		dec	e
+026+  C039             
+027+  C039             no_page5: 				
+028+  C039 FE 03       		cp	3					; Don't test RAM page 2 again
+029+  C03B 20 01       		jr	nz, no_page2
+030+  C03D 1D          		dec	e
+031+  C03E             
+032+  C03E             no_page2: 				
+033+  C03E AF          		xor	a
+034+  C03F 1D          		dec	e
+035+  C040 ED 59       		out	(c), e
+036+  C042 20 E1       		jr	nz, ram_test_loop
+037+  C044             ;endtest
+038+  C044 C9          		ret
+039+  C045             ; End of function startup
+040+  C045             ; ███████████████ S U B	R O U T	I N E ███████████████████████████████████████
+041+  C045             ram_fault: 				
+042+  C045 7B          		ld	a, e
+043+  C046 D3 FE       		out	(254), a
+044+  C048             
+045+  C048             delay1: 					
+046+  C048 10 FE       		djnz	$
+047+  C04A 2F          		cpl
+048+  C04B D3 FE       		out	(254), a
+049+  C04D 06 07       		ld	b, 7
+050+  C04F             
+051+  C04F             delay2: 					
+052+  C04F 10 FE       		djnz	$
+053+  C051 18 F2       		jr	ram_fault
+054+  C053             ; End of function ram_fault
+055+  C053             	endmodule
+026   C053             ramcodeinrom	
+027   C053             ;			DISP 49152		
+028   C053             ramcode			
+029   C053 CD 98 C1    			call cls.CLS
+030   C056 3E 47       			ld   a,71
+031   C058 21 00 58    			ld   HL,22528
+032   C05B 11 01 58    			ld   DE,22529
+033   C05E 01 FF 02    			ld   BC,767
+034   C061 77          			ld   (HL),a
+035   C062 ED B0       			ldir
+036   C064             			
+037   C064 21 70 F2    			ld   hl,TEXT1
+038   C067 01 07 01    			ld   bc,#0107
+039   C06A             //			call t42.T42_TEXT
+040   C06A             			
+041   C06A 01 28 07    			ld	bc,#0728
+042   C06D ED 43 A5 C7 			ld	(txy.cursor),bc
+043   C071 21 70 F2    			ld	hl,TEXT1
+044   C074 CD 7D C6    			call txy.txy  
+045   C077             			
+046   C077 11 0A 04    			ld de,#040A
+047   C07A 21 B3 CA    	        ld hl,CaroLogo
+048   C07D CD F8 CD    			call sprite2.OK
+049   C080             			
+050   C080             			
+051   C080             			
+052   C080             ;carymary         
+053   C080 01 27 05    			 ld bc,#0527
+054   C083 11 D1 05    			 ld de,#05d1
+055   C086 CD C6 C0    			 call draw_jugo.DRAW
+056   C089 01 27 10    			 ld bc,#1027
+057   C08C 11 D1 10    			 ld de,#10d1
+058   C08F CD C6 C0    			 call draw_jugo.DRAW
+059   C092             
+060   C092 01 CD B8    			ld	bc,#B8Cd
+061   C095 ED 43 A5 C7 			ld	(txy.cursor),bc
+062   C099 21 67 F2    			ld	hl,TEXT0
+063   C09C CD 7D C6    			call txy.txy         
+064   C09F             			
+065   C09F CD A8 C1    			call iinkey.ANYKEY
+066   C0A2             			
+067   C0A2 21 3C CE    			ld hl,easyhdd
+068   C0A5 11 00 80    			ld de,32768
+069   C0A8 01 2B 24    			ld bc,easyhddend-easyhdd
+070   C0AB ED B0       			ldir
+071   C0AD             			
+072   C0AD 01 D0 B8    			ld	bc,#B8D0
+073   C0B0 ED 43 A5 C7 			ld	(txy.cursor),bc
+074   C0B4 21 8E F2    			ld	hl,TEXT2
+075   C0B7 CD 7D C6    			call txy.txy
+076   C0BA             			
+077   C0BA CD 00 80    			call 32768
+078   C0BD             /*
+079   C0BD~            1			call iinkey.IINKEY
+080   C0BD~            			jr z,1B
+081   C0BD~            			cp 'n'
+082   C0BD~            			jr nz,1B
+083   C0BD             */			
+084   C0BD 3E 40       			ld a,64
+085   C0BF D3 17       			out (23),a
+086   C0C1 C3 66 00    			jp 102 //NMI
+087   C0C4             			
+088   C0C4 FB          			ei
+089   C0C5 C9          			ret
+090   C0C6             ; --------------- L I B R A R I E S ---------------------------------------	
+091   C0C6             	
+092   C0C6             //INCLUDE "nasobeniHLDE.a80"
+093   C0C6             	INCLUDE "draw-jugo.a80"
+001+  C0C6             ;rutina na kresleni cary. pochazi z nejakeho jugoslavskeho casaku
+002+  C0C6             ;BC-ODKUD DE-KAM NAKRESLI CARU
+003+  C0C6             ;POCATEK VLEVO NAHORE (0,0)
+004+  C0C6             	module draw_jugo
+005+  C0C6 7A          DRAW     LD   A,D
+006+  C0C7 FE C0                CP   192
+007+  C0C9 D0                   RET  NC
+008+  C0CA 78                   LD   A,B
+009+  C0CB FE C0                CP   192
+010+  C0CD D0                   RET  NC
+011+  C0CE 3F                   CCF
+012+  C0CF 1F                   RRA
+013+  C0D0 37                   SCF
+014+  C0D1 1F                   RRA
+015+  C0D2 A7                   AND  A
+016+  C0D3 1F                   RRA
+017+  C0D4 A8                   XOR  B
+018+  C0D5 E6 F8                AND  248
+019+  C0D7 A8                   XOR  B
+020+  C0D8 67                   LD   H,A
+021+  C0D9 79                   LD   A,C
+022+  C0DA 07                   RLCA
+023+  C0DB 07                   RLCA
+024+  C0DC 07                   RLCA
+025+  C0DD 6F                   LD   L,A
+026+  C0DE E6 38                AND  56
+027+  C0E0 2F                   CPL
+028+  C0E1 32 E6 C0             LD   (LAB+1),A
+029+  C0E4 AF                   XOR  A
+030+  C0E5 CB C7       LAB      SET  0,A
+031+  C0E7 08                   EX   AF,AF'
+032+  C0E8 7D                   LD   A,L
+033+  C0E9 A8                   XOR  B
+034+  C0EA E6 C7                AND  199
+035+  C0EC A8                   XOR  B
+036+  C0ED 07                   RLCA
+037+  C0EE 07                   RLCA
+038+  C0EF 6F                   LD   L,A
+039+  C0F0 78                   LD   A,B
+040+  C0F1 92                   SUB  D
+041+  C0F2 06 00                LD   B,0
+042+  C0F4 30 03                JR   NC,N1
+043+  C0F6 ED 44                NEG
+044+  C0F8 04                   INC  B
+045+  C0F9 57          N1       LD   D,A
+046+  C0FA 79                   LD   A,C
+047+  C0FB 93                   SUB  E
+048+  C0FC 0E 00                LD   C,0
+049+  C0FE 30 03                JR   NC,N2
+050+  C100 ED 44                NEG
+051+  C102 0C                   INC  C
+052+  C103 5F          N2       LD   E,A
+053+  C104 08                   EX   AF,AF'
+054+  C105 F5                   PUSH AF
+055+  C106 B6                   OR   (HL)
+056+  C107 77                   LD   (HL),A
+057+  C108 F1                   POP  AF
+058+  C109 08                   EX   AF,AF'
+059+  C10A B2                   OR   D
+060+  C10B C8                   RET  Z
+061+  C10C E5                   PUSH HL
+062+  C10D 7A                   LD   A,D
+063+  C10E BB                   CP   E
+064+  C10F 38 37                JR   C,POX
+065+  C111 21 6C C1             LD   HL,LEVO
+066+  C114 CB 41                BIT  0,C
+067+  C116 28 03                JR   Z,Y1
+068+  C118 21 67 C1             LD   HL,DESNO
+069+  C11B 22 3B C1    Y1       LD   (DIA+1),HL
+070+  C11E 21 84 C1             LD   HL,GORE
+071+  C121 CB 40                BIT  0,B
+072+  C123 28 03                JR   Z,Y2
+073+  C125 21 71 C1             LD   HL,DOLE
+074+  C128 22 3E C1    Y2       LD   (NAST+1),HL
+075+  C12B 4A                   LD   C,D
+076+  C12C CB 39       N3       SRL  C
+077+  C12E DD 62                LD   HX,D
+078+  C130 08                   EX   AF,AF'
+079+  C131 47                   LD   B,A
+080+  C132 E1                   POP  HL
+081+  C133 79          LOOP     LD   A,C
+082+  C134 93                   SUB  E
+083+  C135 4F                   LD   C,A
+084+  C136 30 05                JR   NC,NAST
+085+  C138 82                   ADD  A,D
+086+  C139 4F                   LD   C,A
+087+  C13A CD 00 00    DIA      CALL 0
+088+  C13D CD 00 00    NAST     CALL 0
+089+  C140 78                   LD   A,B
+090+  C141 B6                   OR   (HL)
+091+  C142 77                   LD   (HL),A
+092+  C143 DD 25                DEC  HX
+093+  C145 20 EC                JR   NZ,LOOP
+094+  C147 C9                   RET
+095+  C148 21 6C C1    POX      LD   HL,LEVO
+096+  C14B CB 41                BIT  0,C
+097+  C14D 28 03                JR   Z,X1
+098+  C14F 21 67 C1             LD   HL,DESNO
+099+  C152 22 3E C1    X1       LD   (NAST+1),HL
+100+  C155 21 84 C1             LD   HL,GORE
+101+  C158 CB 40                BIT  0,B
+102+  C15A 28 03                JR   Z,X2
+103+  C15C 21 71 C1             LD   HL,DOLE
+104+  C15F 22 3B C1    X2       LD   (DIA+1),HL
+105+  C162 4B                   LD   C,E
+106+  C163 5A                   LD   E,D
+107+  C164 51                   LD   D,C
+108+  C165 18 C5                JR   N3
+109+  C167 CB 08       DESNO    RRC  B
+110+  C169 D0                   RET  NC
+111+  C16A 23                   INC  HL
+112+  C16B C9                   RET
+113+  C16C CB 00       LEVO     RLC  B
+114+  C16E D0                   RET  NC
+115+  C16F 2B                   DEC  HL
+116+  C170 C9                   RET
+117+  C171 24          DOLE     INC  H
+118+  C172 7C                   LD   A,H
+119+  C173 E6 07                AND  7
+120+  C175 C0                   RET  NZ
+121+  C176 7C                   LD   A,H
+122+  C177 D6 08                SUB  8
+123+  C179 67                   LD   H,A
+124+  C17A 7D                   LD   A,L
+125+  C17B C6 20                ADD  A,32
+126+  C17D 6F                   LD   L,A
+127+  C17E D0                   RET  NC
+128+  C17F 7C                   LD   A,H
+129+  C180 C6 08                ADD  A,8
+130+  C182 67                   LD   H,A
+131+  C183 C9                   RET
+132+  C184 25          GORE     DEC  H
+133+  C185 7C                   LD   A,H
+134+  C186 2F                   CPL
+135+  C187 E6 07                AND  7
+136+  C189 C0                   RET  NZ
+137+  C18A 7C                   LD   A,H
+138+  C18B C6 08                ADD  A,8
+139+  C18D 67                   LD   H,A
+140+  C18E 7D                   LD   A,L
+141+  C18F D6 20                SUB  32
+142+  C191 6F                   LD   L,A
+143+  C192 D0                   RET  NC
+144+  C193 7C                   LD   A,H
+145+  C194 D6 08                SUB  8
+146+  C196 67                   LD   H,A
+147+  C197 C9                   RET
+148+  C198             	endmodule
+149+  C198             
+094   C198             	INCLUDE "cls.a80"
+001+  C198             	module cls
+002+  C198 21 00 40    CLS      LD   HL,16384
+003+  C19B 11 01 40             LD   DE,16385
+004+  C19E 01 FF 1A             LD   BC,6911
+005+  C1A1 75                   LD   (HL),L
+006+  C1A2 ED B0                LDIR
+007+  C1A4 AF                   XOR  A
+008+  C1A5 D3 FE                OUT  (254),A
+009+  C1A7 C9                   RET
+010+  C1A8             	endmodule
+095   C1A8             	INCLUDE "iinkey.a80"
+001+  C1A8             	module iinkey
+002+  C1A8 CD B5 C1    ANYKEY   call IINKEY
+003+  C1AB 28 FB                jr   z,ANYKEY
+004+  C1AD F5                   push af
+005+  C1AE CD B5 C1    ANYKEY_0 call IINKEY
+006+  C1B1 20 FB                jr   nz,ANYKEY_0
+007+  C1B3 F1                   pop  af
+008+  C1B4 C9                   ret
+009+  C1B5             ;------------------------------
+010+  C1B5 E5          IINKEY   push hl
+011+  C1B6 D5                   push de
+012+  C1B7 C5                   push bc
+013+  C1B8 01 FE 7F             ld   bc,#7FFE
+014+  C1BB 26 00                ld   h,0
+015+  C1BD 54                   ld   d,h
+016+  C1BE 5C                   ld   e,h
+017+  C1BF 2E 05       II1      ld   l,5
+018+  C1C1 ED 78                in   a,(c)
+019+  C1C3 24          II2      inc  h
+020+  C1C4 0F                   rrca
+021+  C1C5 38 02                jr   c,II3
+022+  C1C7 53                   ld   d,e
+023+  C1C8 5C                   ld   e,h
+024+  C1C9 2D          II3      dec  l
+025+  C1CA 20 F7                jr   nz,II2
+026+  C1CC CB 08                rrc  b
+027+  C1CE 38 EF                jr   c,II1
+028+  C1D0 7B                   ld   a,e
+029+  C1D1 FE 24                cp   #24
+030+  C1D3 20 03                jr   nz,II5
+031+  C1D5 5A                   ld   e,d
+032+  C1D6 16 24                ld   d,#24
+033+  C1D8 FE 02       II5      cp   2
+034+  C1DA 20 03                jr   nz,II6
+035+  C1DC 5A                   ld   e,d
+036+  C1DD 16 02                ld   d,2
+037+  C1DF 21 01 C2    II6      ld   hl,IINN
+038+  C1E2 AF                   xor  a
+039+  C1E3 AA                   xor  d
+040+  C1E4 28 12                jr   z,II7
+041+  C1E6 21 53 C2             ld   hl,IISS
+042+  C1E9 FE 02                cp   2
+043+  C1EB 28 0B                jr   z,II7
+044+  C1ED 21 2A C2             ld   hl,IICS
+045+  C1F0 FE 24                cp   #24
+046+  C1F2 28 04                jr   z,II7
+047+  C1F4 3E 01                ld   a,1
+048+  C1F6 18 04                jr   II8
+049+  C1F8             
+050+  C1F8 16 00       II7      ld   d,0
+051+  C1FA 19                   add  hl,de
+052+  C1FB 7E                   ld   a,(hl)
+053+  C1FC A7          II8      and  a
+054+  C1FD C1                   pop  bc
+055+  C1FE D1                   pop  de
+056+  C1FF E1                   pop  hl
+057+  C200 C9                   ret
+058+  C201             
+059+  C201 00 20 1C    IINN     defb 0," ",#1C
+060+  C204 6D 6E 62             defb "mnb"
+061+  C207 0D                   defb 13
+062+  C208 6C 6B 6A 68          defb "lkjh"
+063+  C20C 706F697579           defb "poiuy"
+064+  C211 3039383736           defb "09876"
+065+  C216 3132333435           defb "12345"
+066+  C21B 7177657274           defb "qwert"
+067+  C220 6173646667           defb "asdfg"
+068+  C225 00                   defb 0
+069+  C226 7A 78 63 76          defb "zxcv"
+070+  C22A             
+071+  C22A 00 11 0E    IICS     defb 0,#11,#0E
+072+  C22D 4D 4E 42             defb "MNB"
+073+  C230 02                   defb 2
+074+  C231 4C 4B 4A 48          defb "LKJH"
+075+  C235 504F495559           defb "POIUY"
+076+  C23A 0C0F090B0A           defb #0C,#0F,9,#0B,#0A
+077+  C23F 0706040508           defb 7,6,4,5,8
+078+  C244 5157455254           defb "QWERT"
+079+  C249 4153444647           defb "ASDFG"
+080+  C24E 1F                   defb #1F
+081+  C24F 5A 58 43 56          defb "ZXCV"
+082+  C253             
+083+  C253 00 10 1E    IISS     defb 0,16,#1E
+084+  C256 2E 2C 2A             defb ".,*"
+085+  C259 03                   defb 3
+086+  C25A 3D 2B 2D 5E          defb "=+-^"
+087+  C25E 22                   defb 34 ;"
+088+  C25F 3B 7F 7D 7B          defb ";}{"
+089+  C263 5F29282726           defb "_)('&"
+090+  C268 2140232425           defb "!@#$%"
+091+  C26D 12 13 14             defb #12,#13,#14
+092+  C270 3C 3E                defb "<>"
+093+  C272 7E 7C                defb "~|"
+094+  C274 5C                   defb 92 ;\
+095+  C275 7B                   defb 123 ;{
+096+  C276 7D                   defb 125 ;}
+097+  C277 1D                   defb #1D
+098+  C278 3A 60 3F 2F          defb ":`?/"
+099+  C27C             
+100+  C27C             	endmodule
+096   C27C             	INCLUDE "t42.a80"
+001+  C27C             ;LMN128 - Jan Kucera Zlin
+002+  C27C             ;Tisk textu 42 znaku na radek
+003+  C27C             ;-umi tisknou v danych mezich urcenych promenymi t42_borb a t42_bore
+004+  C27C             ;-posledni znak ma nastaveny bit7
+005+  C27C             ;-podporuje enter 13
+006+  C27C             ;-umi tiskout i barvy dle promene t42_att; pokud je nula neobarvuje
+007+  C27C             ;-podporuje znemu barvy pres kod 16 nasledovany hodnotou attributu
+008+  C27C             
+009+  C27C             	module t42
+010+  C27C             
+011+  C27C 7E          T42_TEXT ld   a,(hl)
+012+  C27D E6 7F                and  127
+013+  C27F FE 0D                cp   13
+014+  C281 28 19                jr   z,T42_ZMEN
+015+  C283 FE 10                cp   16
+016+  C285 28 23                jr		z,T42_ZMENCOLOR
+017+  C287 E5                   push hl
+018+  C288 C5                   push bc
+019+  C289 CD B4 C2             call T42
+020+  C28C C1                   pop  bc
+021+  C28D E1                   pop  hl
+022+  C28E 3A B2 C2             ld   a,(T42_BORE)
+023+  C291 3D                   dec  a
+024+  C292 B9                   cp   c
+025+  C293 38 07                jr   c,T42_ZMEN
+026+  C295 0C                   inc  c
+027+  C296 7E          T42_BACK ld   a,(hl)
+028+  C297 17                   rla
+029+  C298 D8                   ret  c
+030+  C299 23                   inc  hl
+031+  C29A 18 E0                jr   T42_TEXT
+032+  C29C             
+033+  C29C 3A B1 C2    T42_ZMEN ld   a,(T42_BORB)
+034+  C29F 4F                   ld   c,a
+035+  C2A0 04                   inc  b
+036+  C2A1 78                   ld   a,b
+037+  C2A2 FE 18                cp   24
+038+  C2A4 38 F0                jr   c,T42_BACK
+039+  C2A6 06 00                ld   b,0
+040+  C2A8 18 EC                jr   T42_BACK
+041+  C2AA             T42_ZMENCOLOR
+042+  C2AA 23          			inc hl
+043+  C2AB 7E          			ld a,(hl)
+044+  C2AC 32 B3 C2    			ld (T42_ATT),a
+045+  C2AF 18 E5       			jr T42_BACK
+046+  C2B1             					
+047+  C2B1 01          T42_BORB 	defb 1
+048+  C2B2 29          T42_BORE 	defb 41
+049+  C2B3 00          T42_ATT		defb 0
+050+  C2B4             
+051+  C2B4             ;Tisk 42 znaku na radek
+052+  C2B4             ;pocatek vlevo nahore (0,0)
+053+  C2B4             
+054+  C2B4 11 7D C2    T42      ld   de,T42_SADA-256
+055+  C2B7 26 00                ld   h,0
+056+  C2B9 6F                   ld   l,a
+057+  C2BA 29                   add  hl,hl
+058+  C2BB 29                   add  hl,hl
+059+  C2BC 29                   add  hl,hl
+060+  C2BD 19                   add  hl,de
+061+  C2BE 78                   ld   a,b
+062+  C2BF 0F                   rrca
+063+  C2C0 0F                   rrca
+064+  C2C1 0F                   rrca
+065+  C2C2 E6 E0                and  %11100000
+066+  C2C4 5F                   ld   e,a
+067+  C2C5 78                   ld   a,b
+068+  C2C6 E6 18                and  %00011000
+069+  C2C8 F6 40                or   %01000000
+070+  C2CA 57                   ld   d,a
+071+  C2CB 79                   ld   a,c
+072+  C2CC E6 3C                and  %00111100
+073+  C2CE 0F                   rrca
+074+  C2CF 0F                   rrca
+075+  C2D0 47                   ld   b,a
+076+  C2D1 79                   ld   a,c
+077+  C2D2 E6 3C                and  %00111100
+078+  C2D4 90                   sub  b
+079+  C2D5 83                   add  a,e
+080+  C2D6 5F                   ld   e,a
+081+  C2D7 79                   ld   a,c
+082+  C2D8 E6 03                and  %00000011
+083+  C2DA 06 08                ld   b,8
+084+  C2DC 20 0B                jr   nz,T42_T123
+085+  C2DE 1A          T42_T0   ld   a,(de)
+086+  C2DF E6 03                and  %00000011
+087+  C2E1 B6                   or   (hl)
+088+  C2E2 12                   ld   (de),a
+089+  C2E3 14                   inc  d
+090+  C2E4 23                   inc  hl
+091+  C2E5 10 F7                djnz T42_T0
+092+  C2E7 18 68                jr T42_COLOR
+093+  C2E9             ;         ret
+094+  C2E9             
+095+  C2E9 FE 02       T42_T123 cp   2
+096+  C2EB 38 13                jr   c,T42_T1
+097+  C2ED 28 29                jr   z,T42_T2
+098+  C2EF 1C          T42_T3   inc  e
+099+  C2F0 1C                   inc  e
+100+  C2F1 1A          T42_T31  ld   a,(de)
+101+  C2F2 E6 C0                and  %11000000
+102+  C2F4 4F                   ld   c,a
+103+  C2F5 7E                   ld   a,(hl)
+104+  C2F6 0F                   rrca
+105+  C2F7 0F                   rrca
+106+  C2F8 B1                   or   c
+107+  C2F9 12                   ld   (de),a
+108+  C2FA 14                   inc  d
+109+  C2FB 23                   inc  hl
+110+  C2FC 10 F3                djnz T42_T31
+111+  C2FE 18 51                jr T42_COLOR
+112+  C300             
+113+  C300                      ;ret
+114+  C300             
+115+  C300 AF          T42_T1   xor  a
+116+  C301 32 3E C3             ld   (T42_P3),a
+117+  C304 32 3F C3             ld   (T42_P4),a
+118+  C307 3E FC                ld   a,%11111100
+119+  C309 32 39 C3             ld   (T42_P1+1),a
+120+  C30C 2F                   cpl
+121+  C30D CD 32 C3             call T42_P_A
+122+  C310 3E 0F                ld   a,%00001111
+123+  C312 32 39 C3             ld   (T42_P1+1),a
+124+  C315 2F                   cpl
+125+  C316 18 18                jr   T42_P_B
+126+  C318             
+127+  C318 1C          T42_T2   inc  e
+128+  C319 3E 07                ld   a,7
+129+  C31B 32 3E C3             ld   (T42_P3),a
+130+  C31E 32 3F C3             ld   (T42_P4),a
+131+  C321 3E F0                ld   a,%11110000
+132+  C323 32 39 C3             ld   (T42_P1+1),a
+133+  C326 2F                   cpl
+134+  C327 CD 32 C3             call T42_P_A
+135+  C32A 3E 3F                ld   a,%00111111
+136+  C32C 32 39 C3             ld   (T42_P1+1),a
+137+  C32F 2F                   cpl
+138+  C330             
+139+  C330 06 08       T42_P_B  ld   b,8
+140+  C332 32 41 C3    T42_P_A  ld   (T42_P2+1),a
+141+  C335 E5                   push hl
+142+  C336 D5                   push de
+143+  C337 1A          T42_P0   ld   a,(de)
+144+  C338 E6 00       T42_P1   and  0
+145+  C33A 4F                   ld   c,a
+146+  C33B 7E                   ld   a,(hl)
+147+  C33C 07                   rlca
+148+  C33D 07                   rlca
+149+  C33E 00          T42_P3   nop
+150+  C33F 00          T42_P4   nop
+151+  C340 E6 00       T42_P2   and  0
+152+  C342 B1                   or   c
+153+  C343 12                   ld   (de),a
+154+  C344 14                   inc  d
+155+  C345 23                   inc  hl
+156+  C346 10 EF                djnz T42_P0
+157+  C348                      
+158+  C348 D5                   push de
+159+  C349 CD 51 C3             call T42_COLOR
+160+  C34C D1                   pop de
+161+  C34D             ; podpora barev         
+162+  C34D D1                   pop  de
+163+  C34E E1                   pop  hl
+164+  C34F 1C                   inc  e
+165+  C350                      
+166+  C350             
+167+  C350                      
+168+  C350 C9                   ret
+169+  C351             
+170+  C351             T42_COLOR
+171+  C351 3A B3 C2    				ld a,(T42_ATT)
+172+  C354 B7          				or a
+173+  C355 C8          				ret z
+174+  C356             ; pokud je nula, tak se neobarvuje
+175+  C356 15          				dec d				
+176+  C357 7A          				ld a,d
+177+  C358 0F          				rrca
+178+  C359 0F          				rrca
+179+  C35A 0F          				rrca
+180+  C35B E6 03       				and 3
+181+  C35D F6 58       				or 88
+182+  C35F 57          				ld d,a
+183+  C360 3A B3 C2    				ld a,(T42_ATT)
+184+  C363 12          				ld (de),a
+185+  C364 C9          				ret
+186+  C365             ;29
+187+  C365 00                   defb %00000000
+188+  C366 30                   defb %00110000
+189+  C367 78                   defb %01111000
+190+  C368 78                   defb %01111000
+191+  C369 78                   defb %01111000
+192+  C36A 30                   defb %00110000
+193+  C36B 00                   defb %00000000
+194+  C36C 00                   defb %00000000				
+195+  C36D             ;30
+196+  C36D FC                   defb %11111100
+197+  C36E 84                   defb %10000100
+198+  C36F 84                   defb %10000100
+199+  C370 84                   defb %10000100
+200+  C371 84                   defb %10000100
+201+  C372 84                   defb %10000100
+202+  C373 84                   defb %10000100
+203+  C374 FC                   defb %11111100
+204+  C375             ;31
+205+  C375 00                   defb %00000000
+206+  C376 78                   defb %01111000
+207+  C377 78                   defb %01111000
+208+  C378 78                   defb %01111000
+209+  C379 78                   defb %01111000
+210+  C37A 78                   defb %01111000
+211+  C37B 78                   defb %01111000
+212+  C37C 00                   defb %00000000
+213+  C37D             
+214+  C37D             T42_SADA defw 0,0,0,0
+214+  C37D 0000000000000000
+215+  C385 F8 88 50 50          defw 35064,20560
+216+  C389                      defw 32,32,53456,0,0,0
+216+  C389 20002000D0D0000000000000
+217+  C395                      defw 63568,20560,63568
+217+  C395 50F8505050F8
+218+  C39B                      defw 80,63520,63648
+218+  C39B 500020F8A0F8
+219+  C3A1                      defw 63528,32,51200
+219+  C3A1 28F8200000C8
+220+  C3A7                      defw 12504,55392,152
+220+  C3A7 D83060D89800
+221+  C3AD                      defw 8192,8272,34896
+221+  C3AD 002050205088
+222+  C3B3                      defw 112,24624,0,0,0
+222+  C3B3 70003060000000000000
+223+  C3BD 30 60                defw 24624
+224+  C3BF 60 60                defw 24672
+225+  C3C1 60 60                defw 24672
+226+  C3C3 30 00                defw 48
+227+  C3C5 60 30                defw 12384
+228+  C3C7 30 30                defw 12336
+229+  C3C9 30 30                defw 12336
+230+  C3CB 60 00                defw 96
+231+  C3CD 00 50                defw 20480
+232+  C3CF 20 F8                defw 63520
+233+  C3D1 20 50                defw 20512
+234+  C3D3 00 00                defw 0
+235+  C3D5 00 20                defw 8192
+236+  C3D7 20 F8                defw 63520
+237+  C3D9 20 20                defw 8224
+238+  C3DB 00 00                defw 0
+239+  C3DD 00 00                defw 0
+240+  C3DF 00 00                defw 0
+241+  C3E1 00 30                defw 12288
+242+  C3E3 60 00                defw 96
+243+  C3E5 00 00                defw 0
+244+  C3E7 00 78                defw 30720
+245+  C3E9 00 00                defw 0
+246+  C3EB 00 00                defw 0
+247+  C3ED 00 00                defw 0
+248+  C3EF 00 00                defw 0
+249+  C3F1 00 60                defw 24576
+250+  C3F3 60 00                defw 96
+251+  C3F5 00 08                defw 2048
+252+  C3F7 18 30                defw 12312
+253+  C3F9 60 C0                defw 49248
+254+  C3FB 80 00                defw 128
+255+  C3FD 70 D8                defw 55408
+256+  C3FF E8 C8                defw 51432
+257+  C401 C8 C8                defw 51400
+258+  C403 70 00                defw 112
+259+  C405 20 60                defw 24608
+260+  C407 E0 60                defw 24800
+261+  C409 60 60                defw 24672
+262+  C40B F0 00                defw 240
+263+  C40D 70 88                defw 34928
+264+  C40F 08 70                defw 28680
+265+  C411 C0 C0                defw 49344
+266+  C413 F8 00                defw 248
+267+  C415 70 C8                defw 51312
+268+  C417 08 30                defw 12296
+269+  C419 08 C8                defw 51208
+270+  C41B 70 00                defw 112
+271+  C41D 10 20                defw 8208
+272+  C41F 40 D0                defw 53312
+273+  C421 F8 10                defw 4344
+274+  C423 10 00                defw 16
+275+  C425 F8 C0                defw 49400
+276+  C427 C0 F0                defw 61632
+277+  C429 08 C8                defw 51208
+278+  C42B 70 00                defw 112
+279+  C42D 70 C8                defw 51312
+280+  C42F C0 F0                defw 61632
+281+  C431 C8 C8                defw 51400
+282+  C433 70 00                defw 112
+283+  C435 F8 18                defw 6392
+284+  C437 18 30                defw 12312
+285+  C439 60 C0                defw 49248
+286+  C43B 80 00                defw 128
+287+  C43D 70 C8                defw 51312
+288+  C43F C8 70                defw 28872
+289+  C441 C8 C8                defw 51400
+290+  C443 70 00                defw 112
+291+  C445 70 C8                defw 51312
+292+  C447 C8 78                defw 30920
+293+  C449 08 C8                defw 51208
+294+  C44B 70 00                defw 112
+295+  C44D 00 00                defw 0
+296+  C44F 60 00                defw 96
+297+  C451 00 60                defw 24576
+298+  C453 00 00                defw 0
+299+  C455 00 00                defw 0
+300+  C457 30 00                defw 48
+301+  C459 00 30                defw 12288
+302+  C45B 60 00                defw 96
+303+  C45D 00 18                defw 6144
+304+  C45F 30 60                defw 24624
+305+  C461 30 18                defw 6192
+306+  C463 00 00                defw 0
+307+  C465 00 00                defw 0
+308+  C467 78 00                defw 120
+309+  C469 78 00                defw 120
+310+  C46B 00 00                defw 0
+311+  C46D 00 60                defw 24576
+312+  C46F 30 18                defw 6192
+313+  C471 30 60                defw 24624
+314+  C473 00 00                defw 0
+315+  C475 70 D8                defw 55408
+316+  C477 18 30                defw 12312
+317+  C479 20 00                defw 32
+318+  C47B 20 00                defw 32
+319+  C47D 70 88                defw 34928
+320+  C47F A8 D8                defw 55464
+321+  C481 B0 80                defw 32944
+322+  C483 70 00                defw 112
+323+  C485 70 C8                defw 51312
+324+  C487 C8 F8                defw 63688
+325+  C489 C8 C8                defw 51400
+326+  C48B C8 00                defw 200
+327+  C48D F0 C8                defw 51440
+328+  C48F C8 F0                defw 61640
+329+  C491 C8 C8                defw 51400
+330+  C493 F0 00                defw 240
+331+  C495 70 C8                defw 51312
+332+  C497 C0 C0                defw 49344
+333+  C499 C0 C8                defw 51392
+334+  C49B 70 00                defw 112
+335+  C49D F0 C8                defw 51440
+336+  C49F C8 C8                defw 51400
+337+  C4A1 C8 C8                defw 51400
+338+  C4A3 F0 00                defw 240
+339+  C4A5 F8 C0                defw 49400
+340+  C4A7 C0 F0                defw 61632
+341+  C4A9 C0 C0                defw 49344
+342+  C4AB F8 00                defw 248
+343+  C4AD F8 C0                defw 49400
+344+  C4AF C0 F0                defw 61632
+345+  C4B1 C0 C0                defw 49344
+346+  C4B3 C0 00                defw 192
+347+  C4B5 70 C8                defw 51312
+348+  C4B7 C0 D8                defw 55488
+349+  C4B9 C8 C8                defw 51400
+350+  C4BB 70 00                defw 112
+351+  C4BD C8 C8                defw 51400
+352+  C4BF C8 F8                defw 63688
+353+  C4C1 C8 C8                defw 51400
+354+  C4C3 C8 00                defw 200
+355+  C4C5 F8 60                defw 24824
+356+  C4C7 60 60                defw 24672
+357+  C4C9 60 60                defw 24672
+358+  C4CB F8 00                defw 248
+359+  C4CD 08 08                defw 2056
+360+  C4CF 08 08                defw 2056
+361+  C4D1 C8 C8                defw 51400
+362+  C4D3 70 00                defw 112
+363+  C4D5 C8 C8                defw 51400
+364+  C4D7 D0 E0                defw 57552
+365+  C4D9 D0 C8                defw 51408
+366+  C4DB C8 00                defw 200
+367+  C4DD C0 C0                defw 49344
+368+  C4DF C0 C0                defw 49344
+369+  C4E1 C0 C0                defw 49344
+370+  C4E3 F8 00                defw 248
+371+  C4E5 88 D8                defw 55432
+372+  C4E7 E8 C8                defw 51432
+373+  C4E9 C8 C8                defw 51400
+374+  C4EB C8 00                defw 200
+375+  C4ED C8 C8                defw 51400
+376+  C4EF C8 E8                defw 59592
+377+  C4F1 D8 C8                defw 51416
+378+  C4F3 C8 00                defw 200
+379+  C4F5 70 C8                defw 51312
+380+  C4F7 C8 C8                defw 51400
+381+  C4F9 C8 C8                defw 51400
+382+  C4FB 70 00                defw 112
+383+  C4FD F0 C8                defw 51440
+384+  C4FF C8 F0                defw 61640
+385+  C501 C0 C0                defw 49344
+386+  C503 C0 00                defw 192
+387+  C505 70 C8                defw 51312
+388+  C507 C8 C8                defw 51400
+389+  C509 E8 D8                defw 55528
+390+  C50B 78 00                defw 120
+391+  C50D F0 C8                defw 51440
+392+  C50F C8 F0                defw 61640
+393+  C511 D0 C8                defw 51408
+394+  C513 C8 00                defw 200
+395+  C515 70 C8                defw 51312
+396+  C517 C0 70                defw 28864
+397+  C519 08 C8                defw 51208
+398+  C51B 70 00                defw 112
+399+  C51D F8 60                defw 24824
+400+  C51F 60 60                defw 24672
+401+  C521 60 60                defw 24672
+402+  C523 60 00                defw 96
+403+  C525 C8 C8                defw 51400
+404+  C527 C8 C8                defw 51400
+405+  C529 C8 C8                defw 51400
+406+  C52B 70 00                defw 112
+407+  C52D C8 C8                defw 51400
+408+  C52F C8 C8                defw 51400
+409+  C531 C8 50                defw 20680
+410+  C533 20 00                defw 32
+411+  C535 C8 C8                defw 51400
+412+  C537 C8 C8                defw 51400
+413+  C539 C8 E8                defw 59592
+414+  C53B 50 00                defw 80
+415+  C53D 88 D8                defw 55432
+416+  C53F 70 60                defw 24688
+417+  C541 70 D8                defw 55408
+418+  C543 88 00                defw 136
+419+  C545 88 D0                defw 53384
+420+  C547 60 60                defw 24672
+421+  C549 60 60                defw 24672
+422+  C54B 60 00                defw 96
+423+  C54D F8 18                defw 6392
+424+  C54F 30 60                defw 24624
+425+  C551 C0 C0                defw 49344
+426+  C553 F8 00                defw 248
+427+  C555 78 60                defw 24696
+428+  C557 60 60                defw 24672
+429+  C559 60 60                defw 24672
+430+  C55B 78 00                defw 120
+431+  C55D 00 80                defw 32768
+432+  C55F C0 60                defw 24768
+433+  C561 30 18                defw 6192
+434+  C563 08 00                defw 8
+435+  C565 78 18                defw 6264
+436+  C567 18 18                defw 6168
+437+  C569 18 18                defw 6168
+438+  C56B 78 00                defw 120
+439+  C56D 20 70                defw 28704
+440+  C56F A8 20                defw 8360
+441+  C571 20 20                defw 8224
+442+  C573 20 00                defw 32
+443+  C575 00 00                defw 0
+444+  C577 00 00                defw 0
+445+  C579 00 00                defw 0
+446+  C57B FC 00                defw 252
+447+  C57D 30 48                defw 18480
+448+  C57F 48 E0                defw 57416
+449+  C581 40 40                defw 16448
+450+  C583 F8 00                defw 248
+451+  C585 00 00                defw 0
+452+  C587 70 08                defw 2160
+453+  C589 78 C8                defw 51320
+454+  C58B 78 00                defw 120
+455+  C58D 00 C0                defw 49152
+456+  C58F C0 F0                defw 61632
+457+  C591 C8 C8                defw 51400
+458+  C593 F0 00                defw 240
+459+  C595 00 00                defw 0
+460+  C597 70 C0                defw 49264
+461+  C599 C0 C0                defw 49344
+462+  C59B 70 00                defw 112
+463+  C59D 00 08                defw 2048
+464+  C59F 08 78                defw 30728
+465+  C5A1 C8 C8                defw 51400
+466+  C5A3 78 00                defw 120
+467+  C5A5 00 00                defw 0
+468+  C5A7 70 C8                defw 51312
+469+  C5A9 F0 C0                defw 49392
+470+  C5AB 78 00                defw 120
+471+  C5AD 00 38                defw 14336
+472+  C5AF 60 70                defw 28768
+473+  C5B1 60 60                defw 24672
+474+  C5B3 60 00                defw 96
+475+  C5B5 00 00                defw 0
+476+  C5B7 78 C8                defw 51320
+477+  C5B9 C8 78                defw 30920
+478+  C5BB 08 70                defw 28680
+479+  C5BD 00 C0                defw 49152
+480+  C5BF C0 F0                defw 61632
+481+  C5C1 C8 C8                defw 51400
+482+  C5C3 C8 00                defw 200
+483+  C5C5 00 60                defw 24576
+484+  C5C7 00 E0                defw 57344
+485+  C5C9 60 60                defw 24672
+486+  C5CB F0 00                defw 240
+487+  C5CD 00 30                defw 12288
+488+  C5CF 00 30                defw 12288
+489+  C5D1 30 30                defw 12336
+490+  C5D3 B0 60                defw 24752
+491+  C5D5 00 C0                defw 49152
+492+  C5D7 D0 E0                defw 57552
+493+  C5D9 E0 D0                defw 53472
+494+  C5DB C8 00                defw 200
+495+  C5DD 00 60                defw 24576
+496+  C5DF 60 60                defw 24672
+497+  C5E1 60 60                defw 24672
+498+  C5E3 38 00                defw 56
+499+  C5E5 00 00                defw 0
+500+  C5E7 D0 E8                defw 59600
+501+  C5E9 E8 E8                defw 59624
+502+  C5EB E8 00                defw 232
+503+  C5ED 00 00                defw 0
+504+  C5EF F0 C8                defw 51440
+505+  C5F1 C8 C8                defw 51400
+506+  C5F3 C8 00                defw 200
+507+  C5F5 00 00                defw 0
+508+  C5F7 70 C8                defw 51312
+509+  C5F9 C8 C8                defw 51400
+510+  C5FB 70 00                defw 112
+511+  C5FD 00 00                defw 0
+512+  C5FF F0 C8                defw 51440
+513+  C601 C8 F0                defw 61640
+514+  C603 C0 C0                defw 49344
+515+  C605 00 00                defw 0
+516+  C607 78 C8                defw 51320
+517+  C609 C8 78                defw 30920
+518+  C60B 18 18                defw 6168
+519+  C60D 00 00                defw 0
+520+  C60F 78 C0                defw 49272
+521+  C611 C0 C0                defw 49344
+522+  C613 C0 00                defw 192
+523+  C615 00 00                defw 0
+524+  C617 70 C0                defw 49264
+525+  C619 70 08                defw 2160
+526+  C61B F0 00                defw 240
+527+  C61D 00 60                defw 24576
+528+  C61F 70 60                defw 24688
+529+  C621 60 60                defw 24672
+530+  C623 38 00                defw 56
+531+  C625 00 00                defw 0
+532+  C627 C8 C8                defw 51400
+533+  C629 C8 C8                defw 51400
+534+  C62B 70 00                defw 112
+535+  C62D 00 00                defw 0
+536+  C62F C8 C8                defw 51400
+537+  C631 70 70                defw 28784
+538+  C633 20 00                defw 32
+539+  C635 00 00                defw 0
+540+  C637 C8 E8                defw 59592
+541+  C639 E8 E8                defw 59624
+542+  C63B 50 00                defw 80
+543+  C63D 00 00                defw 0
+544+  C63F 88 D8                defw 55432
+545+  C641 70 D8                defw 55408
+546+  C643 88 00                defw 136
+547+  C645 00 00                defw 0
+548+  C647 C8 C8                defw 51400
+549+  C649 C8 78                defw 30920
+550+  C64B 08 70                defw 28680
+551+  C64D 00 00                defw 0
+552+  C64F F8 30                defw 12536
+553+  C651 60 C0                defw 49248
+554+  C653 F8 00                defw 248
+555+  C655 78 60                defw 24696
+556+  C657 60 C0                defw 49248
+557+  C659 60 60                defw 24672
+558+  C65B 78 00                defw 120
+559+  C65D 60 60                defw 24672
+560+  C65F 60 60                defw 24672
+561+  C661 60 60                defw 24672
+562+  C663 60 00                defw 96
+563+  C665 F0 30                defw 12528
+564+  C667 30 18                defw 6192
+565+  C669 30 30                defw 12336
+566+  C66B F0 00                defw 240
+567+  C66D 34 68                defw 26676
+568+  C66F 00 00                defw 0
+569+  C671 00 00                defw 0
+570+  C673 00 00                defw 0
+571+  C675 70 88                defw 34928
+572+  C677 A8 C8                defw 51368
+573+  C679 A8 88                defw 34984
+574+  C67B 70 00                defw 112
+575+  C67D             	endmodule
+097   C67D             
+098   C67D             	INCLUDE "txy.a80"
+001+  C67D             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+002+  C67D             ; Poziciovy print 42*27 znakov ;
+003+  C67D             ;  + znakovy subor 6*7 bodov   ;
+004+  C67D             ; (vytvoreny pre disasembler)  ;
+005+  C67D             ; . -28.05.1988- Busy software ;
+006+  C67D             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+007+  C67D             ;DEMO:napiste:asm,dbg,rpp,g
+008+  C67D             //Original by BusySoft
+009+  C67D             	MODULE txy
+010+  C67D 7E          txy	 	 ld   a,(hl)
+011+  C67E E6 7F                and  127
+012+  C680             /*         cp   13
+013+  C680                      jr   z,T42_ZMEN */
+014+  C680 FE 10                cp   16
+015+  C682 28 0B                jr	  z,colorchange
+016+  C684 E5                   push hl
+017+  C685 CD 1A C7             call xy
+018+  C688 E1                   pop  hl
+019+  C689             /*         ld   a,(T42_BORE)
+020+  C689~                     dec  a
+021+  C689~                     cp   c
+022+  C689~                     jr   c,T42_ZMEN
+023+  C689                      inc  c */
+024+  C689 7E          T42_BACK ld   a,(hl)
+025+  C68A 17                   rla
+026+  C68B D8                   ret  c
+027+  C68C 23                   inc  hl
+028+  C68D 18 EE                jr   txy
+029+  C68F             
+030+  C68F             colorchange
+031+  C68F 23          			inc hl
+032+  C690 7E          			ld a,(hl)
+033+  C691 32 96 C6    			ld (T42_ATT),a
+034+  C694 18 F3       			jr T42_BACK	
+035+  C696 00          T42_ATT		defb 0	
+036+  C697             
+037+  C697             //exampleBusy
+038+  C697 21 00 40    start	ld	hl,#4000
+039+  C69A 11 01 40    	ld	de,#4001
+040+  C69D 01 FF 17    	ld	bc,#17ff
+041+  C6A0 36 00       	ld	(hl),#00
+042+  C6A2 ED B0       	ldir
+043+  C6A4 21 02 02    	ld	hl,#0202
+044+  C6A7 22 A5 C7    	ld	(cursor),hl
+045+  C6AA 21 C5 C6    	ld	hl,text
+046+  C6AD 7E          aaa	ld	a,(hl)
+047+  C6AE CD 1A C7    	call	xy
+048+  C6B1 23          	inc	hl
+049+  C6B2 20 F9       	jr	nz,aaa
+050+  C6B4 3E 20       	ld	a,' '
+051+  C6B6 47          bbb	ld	b,a
+052+  C6B7 CD 1A C7    	call	xy
+053+  C6BA 78          	ld	a,b
+054+  C6BB 3C          	inc	a
+055+  C6BC FE 80       	cp	#80
+056+  C6BE 38 F6       	jr	c,bbb
+057+  C6C0 21 58 27    	ld	hl,#2758
+058+  C6C3 D9          	exx
+059+  C6C4 C9          	ret
+060+  C6C5             
+061+  C6C5             text	db	'*** Rutina print'
+061+  C6C5 2A2A2A20527574696E61207072696E74
+062+  C6D5             		db	' 42*27 znakov v '
+062+  C6D5 2034322A3237207A6E616B6F76207620
+063+  C6E5             		db	'obraze ***'
+063+  C6E5 6F6272617A65202A2A2A
+064+  C6EF             		db	'        Priklad '
+064+  C6EF 20202020202020205072696B6C616420
+065+  C6FF             		db	'vypisu:         '
+065+  C6FF 7679706973753A202020202020202020
+066+  C70F             		db	'          '
+066+  C70F 20202020202020202020
+067+  C719 00          		db	#00
+068+  C71A             ;main code
+069+  C71A A7          xy	and	a
+070+  C71B C8          	ret	z
+071+  C71C D9          	exx
+072+  C71D ED 4B A5 C7 	ld	bc,(cursor)
+073+  C721 11 AB C6    xy8	ld	de,znaky-256
+074+  C724 26 00       	ld	h,#00
+075+  C726 6F          	ld	l,a
+076+  C727 29          	add	hl,hl
+077+  C728 29          	add	hl,hl
+078+  C729 29          	add	hl,hl
+079+  C72A 19          	add	hl,de
+080+  C72B E5          	push	hl
+081+  C72C FD E1       	pop	iy
+082+  C72E DD 26 08    	ld	xh,#08
+083+  C731 78          xy8dd	ld	a,b
+084+  C732 FE C0       	cp	#c0
+085+  C734 30 38       	jr	nc,xyend
+086+  C736             ;	call	#22b1
+087+  C736             
+088+  C736 A7          	and a
+089+  C737 1F          	rra
+090+  C738 37          	scf
+091+  C739 1F          	rra
+092+  C73A A7          	and a
+093+  C73B 1F          	rra
+094+  C73C A8          	xor b
+095+  C73D E6 F8       	and 248
+096+  C73F A8          	xor b
+097+  C740 67          	ld h,a
+098+  C741 79          	ld a,c
+099+  C742 07          	rlca
+100+  C743 07          	rlca
+101+  C744 07          	rlca
+102+  C745 A8          	xor b
+103+  C746 E6 C7       	and 199
+104+  C748 A8          	xor b
+105+  C749 07          	rlca
+106+  C74A 07          	rlca
+107+  C74B 6F          	ld l,a
+108+  C74C 79          	ld a,c
+109+  C74D E6 07       	and 07
+110+  C74F             
+111+  C74F FD 56 00    	ld	d,(iy+#00)
+112+  C752 1E 00       	ld	e,#00
+113+  C754 28 07       	jr	z,xy8bb
+114+  C756 CB 1A       xy8cc	rr	d
+115+  C758 CB 1B       	rr	e
+116+  C75A 3D          	dec	a
+117+  C75B 20 F9       	jr	nz,xy8cc
+118+  C75D 7A          xy8bb	ld	a,d
+119+  C75E B6          	or	(hl)
+120+  C75F 77          	ld	(hl),a
+121+  C760 23          	inc	hl
+122+  C761 7B          	ld	a,e
+123+  C762 B6          	or	(hl)
+124+  C763 77          	ld	(hl),a
+125+  C764 04          	inc	b
+126+  C765 FD 23       	inc	iy
+127+  C767 DD 25       	dec	xh
+128+  C769 20 C6       	jr	nz,xy8dd
+129+  C76B CD 8C C7    	call T42_COLOR
+130+  C76E DD 21 A1 C7 xyend	ld	ix,flag0
+131+  C772 DD 7E 04    	ld	a,(ix+#04)
+132+  C775 C6 06       	add	a,6
+133+  C777 DD 77 04    	ld	(ix+#04),a
+134+  C77A FE FA       	cp	255-5
+135+  C77C 38 0C       	jr	c,xystop
+136+  C77E DD 36 04 02 	ld	(ix+#04),2
+137+  C782 DD 7E 05    	ld	a,(ix+#05)
+138+  C785 C6 07       	add	a,7
+139+  C787 DD 77 05    	ld	(ix+#05),a
+140+  C78A D9          xystop	exx
+141+  C78B C9          	ret
+142+  C78C             
+143+  C78C             T42_COLOR
+144+  C78C 3A 96 C6    				ld a,(T42_ATT)
+145+  C78F B7          				or a
+146+  C790 C8          				ret z
+147+  C791             ; pokud je nula, tak se neobarvuje
+148+  C791 25          				dec h
+149+  C792 2D          				dec l
+150+  C793 7C          				ld a,h
+151+  C794 0F          				rrca
+152+  C795 0F          				rrca
+153+  C796 0F          				rrca
+154+  C797 E6 03       				and 3
+155+  C799 F6 58       				or 88
+156+  C79B 67          				ld h,a
+157+  C79C 3A 96 C6    				ld a,(T42_ATT)
+158+  C79F 77          				ld (hl),a
+159+  C7A0 C9          				ret
+160+  C7A1             ;systemove premenne:(pre disu)
+161+  C7A1             
+162+  C7A1 00          flag0	db	#00
+163+  C7A2 00          flag1	db	#00
+164+  C7A3 00          flag2	db	#00
+165+  C7A4 00          inp	db	#00
+166+  C7A5             
+167+  C7A5             cursor
+168+  C7A5 00          xxx	db	#00
+169+  C7A6 00          yyy	db	#00
+170+  C7A7 00 00       leni	dw	0
+171+  C7A9 00 00       adr	dw	0
+172+  C7AB             
+173+  C7AB 00 00 00 00 znaky	dw	#00,#00
+174+  C7AF 00 00 00 00 	dw	#00,#00
+175+  C7B3 00 10 10 10 	dw	#1000,#1010
+176+  C7B7 10 00 10 00 	dw	#10,#10
+177+  C7BB 00 48 48 00 	dw	#4800,#48
+178+  C7BF 00 00 00 00 	dw	#00,#00
+179+  C7C3 00 50 F8 50 	dw	#5000,#50f8
+180+  C7C7 50 F8 50 00 	dw	#f850,#50
+181+  C7CB 00 78 A0 70 	dw	#7800,#70a0
+182+  C7CF 28 F0 20 00 	dw	#f028,#20
+183+  C7D3 00 48 08 10 	dw	#4800,#1008
+184+  C7D7 20 40 48 00 	dw	#4020,#48
+185+  C7DB 00 20 50 20 	dw	#2000,#2050
+186+  C7DF 54 48 34 00 	dw	#4854,#34
+187+  C7E3 00 10 20 00 	dw	#1000,#20
+188+  C7E7 00 00 00 00 	dw	#00,#00
+189+  C7EB 00 10 20 20 	dw	#1000,#2020
+190+  C7EF 20 20 10 00 	dw	#2020,#10
+191+  C7F3 00 20 10 10 	dw	#2000,#1010
+192+  C7F7 10 10 20 00 	dw	#1010,#20
+193+  C7FB 00 00 28 10 	dw	#00,#1028
+194+  C7FF 7C 10 28 00 	dw	#107c,#28
+195+  C803 00 00 10 10 	dw	#00,#1010
+196+  C807 7C 10 10 00 	dw	#107c,#10
+197+  C80B 00 00 00 00 	dw	#00,#00
+198+  C80F 10 10 20 00 	dw	#1010,#20
+199+  C813 00 00 00 00 	dw	#00,#00
+200+  C817 78 00 00 00 	dw	#78,#00
+201+  C81B 00 00 00 00 	dw	#00,#00
+202+  C81F 00 30 30 00 	dw	#3000,#30
+203+  C823 00 00 04 08 	dw	#00,#0804
+204+  C827 10 20 40 00 	dw	#2010,#40
+205+  C82B 00 38 4C 54 	dw	#3800,#544c
+206+  C82F 54 64 38 00 	dw	#6454,#38
+207+  C833 00 30 50 10 	dw	#3000,#1050
+208+  C837 10 10 7C 00 	dw	#1010,#7c
+209+  C83B 00 38 44 04 	dw	#3800,#0444
+210+  C83F 38 40 7C 00 	dw	#4038,#7c
+211+  C843 00 38 44 18 	dw	#3800,#1844
+212+  C847 04 44 38 00 	dw	#4404,#38
+213+  C84B 00 08 18 28 	dw	#0800,#2818
+214+  C84F 48 7C 08 00 	dw	#7c48,#08
+215+  C853 00 7C 40 78 	dw	#7c00,#7840
+216+  C857 04 44 38 00 	dw	#4404,#38
+217+  C85B 00 38 40 78 	dw	#3800,#7840
+218+  C85F 44 44 38 00 	dw	#4444,#38
+219+  C863 00 7C 04 08 	dw	#7c00,#0804
+220+  C867 08 10 10 00 	dw	#1008,#10
+221+  C86B 00 38 44 38 	dw	#3800,#3844
+222+  C86F 44 44 38 00 	dw	#4444,#38
+223+  C873 00 38 44 44 	dw	#3800,#4444
+224+  C877 3C 04 38 00 	dw	#043c,#38
+225+  C87B 00 00 30 30 	dw	#00,#3030
+226+  C87F 00 30 30 00 	dw	#3000,#30
+227+  C883 00 00 10 00 	dw	#00,#10
+228+  C887 10 10 20 00 	dw	#1010,#20
+229+  C88B 00 00 10 20 	dw	#00,#2010
+230+  C88F 40 20 10 00 	dw	#2040,#10
+231+  C893 00 00 00 78 	dw	#00,#7800
+232+  C897 00 78 00 00 	dw	#7800,#00
+233+  C89B 00 00 20 10 	dw	#00,#1020
+234+  C89F 08 10 20 00 	dw	#1008,#20
+235+  C8A3 00 30 48 18 	dw	#3000,#1848
+236+  C8A7 10 00 10 00 	dw	#10,#10
+237+  C8AB 00 38 44 34 	dw	#3800,#3444
+238+  C8AF 54 54 38 00 	dw	#5454,#38
+239+  C8B3 00 38 44 44 	dw	#3800,#4444
+240+  C8B7 7C 44 44 00 	dw	#447c,#44
+241+  C8BB 00 78 44 78 	dw	#7800,#7844
+242+  C8BF 44 44 78 00 	dw	#4444,#78
+243+  C8C3 00 38 44 40 	dw	#3800,#4044
+244+  C8C7 40 44 38 00 	dw	#4440,#38
+245+  C8CB 00 78 44 44 	dw	#7800,#4444
+246+  C8CF 44 44 78 00 	dw	#4444,#78
+247+  C8D3 00 7C 40 78 	dw	#7c00,#7840
+248+  C8D7 40 40 7C 00 	dw	#4040,#7c
+249+  C8DB 00 7C 40 78 	dw	#7c00,#7840
+250+  C8DF 40 40 40 00 	dw	#4040,#40
+251+  C8E3 00 38 44 40 	dw	#3800,#4044
+252+  C8E7 4C 44 38 00 	dw	#444c,#38
+253+  C8EB 00 44 44 7C 	dw	#4400,#7c44
+254+  C8EF 44 44 44 00 	dw	#4444,#44
+255+  C8F3 00 38 10 10 	dw	#3800,#1010
+256+  C8F7 10 10 38 00 	dw	#1010,#38
+257+  C8FB 00 04 04 04 	dw	#0400,#0404
+258+  C8FF 44 44 38 00 	dw	#4444,#38
+259+  C903 00 48 50 60 	dw	#4800,#6050
+260+  C907 50 48 44 00 	dw	#4850,#44
+261+  C90B 00 40 40 40 	dw	#4000,#4040
+262+  C90F 40 40 7C 00 	dw	#4040,#7c
+263+  C913 00 44 6C 54 	dw	#4400,#546c
+264+  C917 44 44 44 00 	dw	#4444,#44
+265+  C91B 00 44 44 64 	dw	#4400,#6444
+266+  C91F 54 4C 44 00 	dw	#4c54,#44
+267+  C923 00 38 44 44 	dw	#3800,#4444
+268+  C927 44 44 38 00 	dw	#4444,#38
+269+  C92B 00 78 44 44 	dw	#7800,#4444
+270+  C92F 78 40 40 00 	dw	#4078,#40
+271+  C933 00 38 44 44 	dw	#3800,#4444
+272+  C937 54 4C 3C 00 	dw	#4c54,#3c
+273+  C93B 00 78 44 44 	dw	#7800,#4444
+274+  C93F 78 48 44 00 	dw	#4878,#44
+275+  C943 00 38 40 38 	dw	#3800,#3840
+276+  C947 04 44 38 00 	dw	#4404,#38
+277+  C94B 00 7C 10 10 	dw	#7c00,#1010
+278+  C94F 10 10 10 00 	dw	#1010,#10
+279+  C953 00 44 44 44 	dw	#4400,#4444
+280+  C957 44 44 38 00 	dw	#4444,#38
+281+  C95B 00 44 44 44 	dw	#4400,#4444
+282+  C95F 44 28 10 00 	dw	#2844,#10
+283+  C963 00 44 44 44 	dw	#4400,#4444
+284+  C967 44 54 28 00 	dw	#5444,#28
+285+  C96B 00 44 28 10 	dw	#4400,#1028
+286+  C96F 10 28 44 00 	dw	#2810,#44
+287+  C973 00 44 44 28 	dw	#4400,#2844
+288+  C977 10 10 10 00 	dw	#1010,#10
+289+  C97B 00 7C 08 10 	dw	#7c00,#1008
+290+  C97F 20 40 7C 00 	dw	#4020,#7c
+291+  C983 00 30 20 20 	dw	#3000,#2020
+292+  C987 20 20 30 00 	dw	#2020,#30
+293+  C98B 00 00 40 20 	dw	#00,#2040
+294+  C98F 10 08 04 00 	dw	#0810,#04
+295+  C993 00 30 10 10 	dw	#3000,#1010
+296+  C997 10 10 30 00 	dw	#1010,#30
+297+  C99B 00 10 38 54 	dw	#1000,#5438
+298+  C99F 10 10 10 00 	dw	#1010,#10
+299+  C9A3 00 00 00 00 	dw	#00,#00
+300+  C9A7 00 00 FC 00 	dw	#00,#fc
+301+  C9AB 00 10 28 20 	dw	#1000,#2028
+302+  C9AF 70 20 78 00 	dw	#2070,#78
+303+  C9B3 00 00 38 04 	dw	#00,#0438
+304+  C9B7 3C 44 3C 00 	dw	#443c,#3c
+305+  C9BB 00 40 40 78 	dw	#4000,#7840
+306+  C9BF 44 44 78 00 	dw	#4444,#78
+307+  C9C3 00 00 38 40 	dw	#00,#4038
+308+  C9C7 40 40 38 00 	dw	#4040,#38
+309+  C9CB 00 04 04 3C 	dw	#0400,#3c04
+310+  C9CF 44 44 3C 00 	dw	#4444,#3c
+311+  C9D3 00 00 38 44 	dw	#00,#4438
+312+  C9D7 78 40 3C 00 	dw	#4078,#3c
+313+  C9DB 00 18 20 30 	dw	#1800,#3020
+314+  C9DF 20 20 20 00 	dw	#2020,#20
+315+  C9E3 00 00 3C 44 	dw	#00,#443c
+316+  C9E7 44 3C 04 38 	dw	#3c44,#3804
+317+  C9EB 00 40 40 78 	dw	#4000,#7840
+318+  C9EF 44 44 44 00 	dw	#4444,#44
+319+  C9F3 00 10 00 30 	dw	#1000,#3000
+320+  C9F7 10 10 38 00 	dw	#1010,#38
+321+  C9FB 00 08 00 08 	dw	#0800,#0800
+322+  C9FF 08 08 48 30 	dw	#0808,#3048
+323+  CA03 00 40 50 60 	dw	#4000,#6050
+324+  CA07 60 50 48 00 	dw	#5060,#48
+325+  CA0B 00 20 20 20 	dw	#2000,#2020
+326+  CA0F 20 20 18 00 	dw	#2020,#18
+327+  CA13 00 00 68 54 	dw	#00,#5468
+328+  CA17 54 54 54 00 	dw	#5454,#54
+329+  CA1B 00 00 78 44 	dw	#00,#4478
+330+  CA1F 44 44 44 00 	dw	#4444,#44
+331+  CA23 00 00 38 44 	dw	#00,#4438
+332+  CA27 44 44 38 00 	dw	#4444,#38
+333+  CA2B 00 00 78 44 	dw	#00,#4478
+334+  CA2F 44 78 40 40 	dw	#7844,#4040
+335+  CA33 00 00 3C 44 	dw	#00,#443c
+336+  CA37 44 3C 04 06 	dw	#3c44,#0604
+337+  CA3B 00 00 38 40 	dw	#00,#4038
+338+  CA3F 40 40 40 00 	dw	#4040,#40
+339+  CA43 00 00 38 40 	dw	#00,#4038
+340+  CA47 38 04 78 00 	dw	#0438,#78
+341+  CA4B 00 20 70 20 	dw	#2000,#2070
+342+  CA4F 20 20 18 00 	dw	#2020,#18
+343+  CA53 00 00 44 44 	dw	#00,#4444
+344+  CA57 44 44 38 00 	dw	#4444,#38
+345+  CA5B 00 00 44 44 	dw	#00,#4444
+346+  CA5F 28 28 10 00 	dw	#2828,#10
+347+  CA63 00 00 44 54 	dw	#00,#5444
+348+  CA67 54 54 28 00 	dw	#5454,#28
+349+  CA6B 00 00 44 28 	dw	#00,#2844
+350+  CA6F 10 28 44 00 	dw	#2810,#44
+351+  CA73 00 00 44 44 	dw	#00,#4444
+352+  CA77 44 3C 04 38 	dw	#3c44,#3804
+353+  CA7B 00 00 7C 08 	dw	#00,#087c
+354+  CA7F 10 20 7C 00 	dw	#2010,#7c
+355+  CA83 00 18 10 20 	dw	#1800,#2010
+356+  CA87 10 10 18 00 	dw	#1010,#18
+357+  CA8B 00 20 20 20 	dw	#2000,#2020
+358+  CA8F 20 20 20 00 	dw	#2020,#20
+359+  CA93 00 30 10 08 	dw	#3000,#0810
+360+  CA97 10 10 30 00 	dw	#1010,#30
+361+  CA9B 00 28 50 00 	dw	#2800,#50
+362+  CA9F 00 00 00 00 	dw	#00,#00
+363+  CAA3 00 38 44 94 	dw	#3800,#9444
+364+  CAA7 A4 94 44 38 	dw	#94a4,#3844
+365+  CAAB FF FF FF FF 	dw	#ffff,#ffff
+366+  CAAF FF FF FF FF 	dw	#ffff,#ffff
+367+  CAB3             
+368+  CAB3             	ENDMODULE
+099   CAB3             CaroLogo
+100   CAB3             	INCBIN "CaroLogo.bin"
+101   CDE8             	INCLUDE "sprite2.a80"
+001+  CDE8             ; zobrazi sprite dle cisla v A pozice a data spritu jsou v tabulce na adrese HL; priklad nakonci!!!
+002+  CDE8             ; nebo DE-pozice, HL-adresa (rutina OK)
+003+  CDE8             ; zobrazuje sprites z programu SpriteEdit typ 2
+004+  CDE8             	module sprite2
+005+  CDE8             SP_      
+006+  CDE8             ;        ld   hl,SP_TAB
+007+  CDE8 87                   add  a,a
+008+  CDE9 87                   add  a,a
+009+  CDEA 16 00                ld   d,0
+010+  CDEC 5F                   ld   e,a
+011+  CDED 19                   add  hl,de
+012+  CDEE 5E                   ld   e,(hl)
+013+  CDEF 23                   inc  hl
+014+  CDF0 56                   ld   d,(hl)
+015+  CDF1 23                   inc  hl
+016+  CDF2 D5             			 push de
+017+  CDF3 5E                   ld   e,(hl)
+018+  CDF4 23                   inc  hl
+019+  CDF5 56                   ld   d,(hl)
+020+  CDF6 EB                   ex   de,hl
+021+  CDF7 D1                   pop de
+022+  CDF8                      
+023+  CDF8             
+024+  CDF8             ;------------------------------
+025+  CDF8             OK       
+026+  CDF8 46                    ld b,(hl)
+027+  CDF9 23          					inc hl
+028+  CDFA 4E                    ld c,(hl)
+029+  CDFB 23                    inc hl
+030+  CDFC 7A                   ld   a,d
+031+  CDFD 0F                   rrca
+032+  CDFE 0F                   rrca
+033+  CDFF 0F                   rrca
+034+  CE00 E6 E0                and  %11100000
+035+  CE02 83                   add  a,e
+036+  CE03 5F                   ld   e,a
+037+  CE04 7A                   ld   a,d
+038+  CE05 E6 18                and  24
+039+  CE07 F6 40                or   64
+040+  CE09 57                   ld   d,a
+041+  CE0A             
+042+  CE0A D5          OK_SEM   push de
+043+  CE0B C5                   push bc
+044+  CE0C 7A                   ld   a,d
+045+  CE0D 0F                   rrca
+046+  CE0E 0F                   rrca
+047+  CE0F 0F                   rrca
+048+  CE10 E6 03                and  3
+049+  CE12 F6 58                or   88
+050+  CE14 57                   ld   d,a
+051+  CE15             
+052+  CE15             OK_RADE1 ;call DE_BAJT
+053+  CE15 7E                    ld a,(hl)
+054+  CE16 23                    inc hl
+055+  CE17             
+056+  CE17 12                   ld   (de),a
+057+  CE18 1C                   inc  e
+058+  CE19 0D                   dec  c
+059+  CE1A 20 F9                jr   nz,OK_RADE1
+060+  CE1C C1                   pop  bc
+061+  CE1D D1                   pop  de
+062+  CE1E             
+063+  CE1E D5          OK_DALSI push de
+064+  CE1F C5                   push bc
+065+  CE20             OK_RADEK ;call DE_BAJT
+066+  CE20 7E                    ld a,(hl)
+067+  CE21 23                    inc hl
+068+  CE22             
+069+  CE22 12                   ld   (de),a
+070+  CE23 1C                   inc  e
+071+  CE24 0D                   dec  c
+072+  CE25 20 F9                jr   nz,OK_RADEK
+073+  CE27 C1                   pop  bc
+074+  CE28 D1                   pop  de
+075+  CE29 14                   inc  d
+076+  CE2A 7A                   ld   a,d
+077+  CE2B E6 07                and  7
+078+  CE2D 20 EF                jr   nz,OK_DALSI
+079+  CE2F 3E 20                ld   a,32
+080+  CE31 83                   add  a,e
+081+  CE32 5F                   ld   e,a
+082+  CE33 3F                   ccf
+083+  CE34 9F                   sbc  a,a
+084+  CE35 E6 F8                and  -8
+085+  CE37 82                   add  a,d
+086+  CE38 57                   ld   d,a
+087+  CE39 10 CF                djnz OK_SEM
+088+  CE3B C9                   ret
+089+  CE3C             
+090+  CE3C             /*
+091+  CE3C~            SP_TAB   defw #0B00  ;kam zobrazit
+092+  CE3C~                     defw 32768 ;odkud
+093+  CE3C~            094+  CE3C~            095+  CE3C             */
+096+  CE3C             	endmodule
+102   CE3C             /*
+103   CE3C~            NewdimLogo
+104   CE3C~            	INCBIN "NewdimLogo.bin"
+105   CE3C~            106   CE3C~            eightbc_i
+107   CE3C~            	INCBIN "8BC_I.cde"
+108   CE3C~            EasyLogoSmall
+109   CE3C~            	INCBIN "EasyLogoSmall.bin"
+110   CE3C             */	
+111   CE3C             easyhdd	
+112   CE3C             	INCBIN "easyhdd.out"
+113   F267             easyhddend
+114   F267             /*
+115   F267~            zvuk
+116   F267~            	INCBIN "ZVUK.BIN"
+117   F267~            zvukend
+118   F267             */
+119   F267             
+120   F267             /*@SP_TAB
+121   F267~            @TAB_sprite1
+122   F267~            		 DEFB 10,4
+123   F267~                     DEFW CaroLogo
+124   F267~                     DEFB 24,20
+125   F267~                     DEFW NewdimLogo
+126   F267~                     defb 0,21
+127   F267~                     defw eightbc_i
+128   F267~                     defb 1,2
+129   F267~                     defw eightbc_i
+130   F267~                     defb 25,2
+131   F267~                     defw EasyLogoSmall
+132   F267             */		 
+133   F267             ; --------------- T E X T---------------------------------------		 
+134   F267             TEXT0    dc 16,7,"any key"
+134   F267 1007616E79206B65F9
+135   F270             TEXT1    dc 16,69,"MB03+ Ultimate firmware 1.28"
+135   F270 10454D4230332B20556C74696D617465206669726D7761726520312E32B8
+136   F28E             TEXT2	 dc 16,0,"loading ..."
+136   F28E 10006C6F6164696E67202E2EAE
+137   F29B             endramcode			
+138   F29B             	ENDMODULE		
+139   F29B             	savesna "boot.sna",49152	
+140   F29B             	
+
+Value    Label
+------ - -----------------------------------------------------------
+0x000B   boot.DMA
+0xEA60 X boot.zvukcompile
+0xC000 X boot.boot
+0xC053   boot.ramcodeinrom
+0xC053   boot.ramcode
+0xF29B   boot.endramcode
+0xC019 X ramtest.ramtest
+0xC025   ramtest.ram_test_loop
+0xC045   ramtest.ram_fault
+0xC039   ramtest.no_page5
+0xC03E   ramtest.no_page2
+0xC048 X ramtest.delay1
+0xC04F X ramtest.delay2
+0xC198   cls.CLS
+0xF270   boot.TEXT1
+0xC7A5   txy.cursor
+0xC67D   txy.txy
+0xCAB3   boot.CaroLogo
+0xCDF8   sprite2.OK
+0xC0C6   draw_jugo.DRAW
+0xF267   boot.TEXT0
+0xC1A8   iinkey.ANYKEY
+0xCE3C   boot.easyhdd
+0xF267   boot.easyhddend
+0xF28E   boot.TEXT2
+0xC0E5   draw_jugo.LAB
+0xC0F9   draw_jugo.N1
+0xC103   draw_jugo.N2
+0xC148   draw_jugo.POX
+0xC16C   draw_jugo.LEVO
+0xC11B   draw_jugo.Y1
+0xC167   draw_jugo.DESNO
+0xC13A   draw_jugo.DIA
+0xC184   draw_jugo.GORE
+0xC128   draw_jugo.Y2
+0xC171   draw_jugo.DOLE
+0xC13D   draw_jugo.NAST
+0xC12C   draw_jugo.N3
+0xC133   draw_jugo.LOOP
+0xC152   draw_jugo.X1
+0xC15F   draw_jugo.X2
+0xC1B5   iinkey.IINKEY
+0xC1AE   iinkey.ANYKEY_0
+0xC1BF   iinkey.II1
+0xC1C3   iinkey.II2
+0xC1C9   iinkey.II3
+0xC1D8   iinkey.II5
+0xC1DF   iinkey.II6
+0xC201   iinkey.IINN
+0xC1F8   iinkey.II7
+0xC253   iinkey.IISS
+0xC22A   iinkey.IICS
+0xC1FC   iinkey.II8
+0xC27C   t42.T42_TEXT
+0xC29C   t42.T42_ZMEN
+0xC2AA   t42.T42_ZMENCOLOR
+0xC2B4   t42.T42
+0xC2B2   t42.T42_BORE
+0xC296   t42.T42_BACK
+0xC2B1   t42.T42_BORB
+0xC2B3   t42.T42_ATT
+0xC37D   t42.T42_SADA
+0xC2E9   t42.T42_T123
+0xC2DE   t42.T42_T0
+0xC351   t42.T42_COLOR
+0xC300   t42.T42_T1
+0xC318   t42.T42_T2
+0xC2EF X t42.T42_T3
+0xC2F1   t42.T42_T31
+0xC33E   t42.T42_P3
+0xC33F   t42.T42_P4
+0xC338   t42.T42_P1
+0xC332   t42.T42_P_A
+0xC330   t42.T42_P_B
+0xC340   t42.T42_P2
+0xC337   t42.T42_P0
+0xC68F   txy.colorchange
+0xC71A   txy.xy
+0xC689   txy.T42_BACK
+0xC696   txy.T42_ATT
+0xC697 X txy.start
+0xC6C5   txy.text
+0xC6AD   txy.aaa
+0xC6B6   txy.bbb
+0xC721 X txy.xy8
+0xC7AB   txy.znaky
+0xC731   txy.xy8dd
+0xC76E   txy.xyend
+0xC75D   txy.xy8bb
+0xC756   txy.xy8cc
+0xC78C   txy.T42_COLOR
+0xC7A1   txy.flag0
+0xC78A   txy.xystop
+0xC7A2 X txy.flag1
+0xC7A3 X txy.flag2
+0xC7A4 X txy.inp
+0xC7A5 X txy.xxx
+0xC7A6 X txy.yyy
+0xC7A7 X txy.leni
+0xC7A9 X txy.adr
+0xCDE8 X sprite2.SP_
+0xCE0A   sprite2.OK_SEM
+0xCE15   sprite2.OK_RADE1
+0xCE1E   sprite2.OK_DALSI
+0xCE20   sprite2.OK_RADEK

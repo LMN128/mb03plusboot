@@ -1,0 +1,55 @@
+;LMN128 - Jan Kucera Zlin
+;it's comes from legacy MB02+ bootloader version 003
+	module ramtest
+ramtest xor a
+		ld 	hl, #4000
+		ld	de, #0608
+		ld	bc, 32765
+		out	(c), a
+
+ram_test_loop:								
+		cpl
+		ld	(hl), a
+		xor	(hl)
+		ld	(hl), a
+		xor	(hl)
+		jr	nz, ram_fault
+		inc	l
+		jr	nz, ram_test_loop
+		inc	h
+		jr	nz, ram_test_loop
+		ld	h, #C0				; RAM pages start address
+		ld	a, e
+		cp	d
+		jr	nz, no_page5		; Don't test RAM page 5 again
+		dec	e
+
+no_page5:				
+		cp	3					; Don't test RAM page 2 again
+		jr	nz, no_page2
+		dec	e
+
+no_page2:				
+		xor	a
+		dec	e
+		out	(c), e
+		jr	nz, ram_test_loop
+;endtest
+		ret
+; End of function startup
+; ███████████████ S U B	R O U T	I N E ███████████████████████████████████████
+ram_fault:				
+		ld	a, e
+		out	(254), a
+
+delay1:					
+		djnz	$
+		cpl
+		out	(254), a
+		ld	b, 7
+
+delay2:					
+		djnz	$
+		jr	ram_fault
+; End of function ram_fault
+	endmodule
