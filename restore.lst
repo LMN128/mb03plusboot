@@ -1,0 +1,45 @@
+01   0000             	DEVICE 	ZXSPECTRUM48
+02   0000             	OUTPUT	restore.cod
+03   0000             	
+04   0000             	org 26000
+05   6590 F3          start	di
+06   6591 3E A1       		ld a,161
+07   6593 D3 17       		out (23),a
+08   6595 21 00 80    		ld hl,32768
+09   6598 11 00 00    		ld de,0
+10   659B 01 00 40    		ld bc,16384
+11   659E ED B0       		ldir
+12   65A0 3E A2       		ld a,162
+13   65A2 D3 17       		out (23),a
+14   65A4 21 00 C0    		ld hl,49152
+15   65A7 11 00 00    		ld de,0
+16   65AA 01 00 40    		ld bc,16384
+17   65AD ED B0       		ldir
+18   65AF 3E A3       		ld a,163
+19   65B1 D3 17       		out (23),a
+20   65B3 21 78 69    		ld hl,27000
+21   65B6 11 00 00    		ld de,0
+22   65B9 01 70 17    		ld bc,6000
+23   65BC ED B0       		ldir
+24   65BE 3E 40       		ld a,64
+25   65C0 D3 17       		out (23),a
+26   65C2 FB          		ei
+27   65C3 C9          		ret
+28   65C4             		
+29   65C4             moveend1			
+30   65C4 00          	BLOCK   (27000-moveend1),0	
+31   6978             	org 27000
+32   6978             	INCBIN DevastMB27000.bin
+33   7FD4             moveend2			
+34   7FD4 00          	BLOCK   (32768-moveend2),0	
+35   8000             	org 32768
+36   8000             	INCBIN 64and65.bin
+37   0000             	
+restore.a80(38): warning: [SAVESNA] RAM <0x4000-0x4001> will be overriden due to 48k snapshot imperfect format.
+38   0000             	savesna "restore.sna",start
+
+Value    Label
+------ - -----------------------------------------------------------
+0x6590   start
+0x65C4   moveend1
+0x7FD4   moveend2

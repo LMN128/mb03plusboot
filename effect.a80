@@ -1,0 +1,48 @@
+;	DEVICE	ZXSPECTRUM48
+;	OUTPUT	effect.cod
+;	org	#8000
+
+;start	xor	a
+;	out	(#fe),a
+	ld	a,#03
+	ld	hl,#4000
+	ld	de,#4001
+nn1	ld	bc,#0100
+	ld	(hl),l
+	ldir
+	ld	b,#06
+	ld	(hl),#7e
+	ldir
+	inc	b
+	ld	(hl),l
+	ldir
+	dec	a
+	jr	nz,nn1
+	ld de,0			;LMN start	
+nn2	ld	b,h
+	ld	c,l
+	add	hl,hl
+	add	hl,hl
+	add	hl,hl
+	add	hl,bc
+	ld	bc,12
+	add	hl,bc
+	ld	a,h
+	and	#03
+	or	#58
+	ld	h,a
+	ex	de,hl
+
+	ld a,h			;LMN
+	cp 32			;LMN lenght
+	jr z, end		;LMN
+	
+	ldi
+	ex	de,hl
+	ld	b,#1e		;LMN (was #20) speed
+wait	djnz	wait
+	jr	nn2
+end
+;		ret   ; for testing
+;	OUTEND
+;	SAVESNA	"effect.sna",start

@@ -1,10 +1,12 @@
 	module cls
-CLS      LD   HL,16384
-         LD   DE,16385
-         LD   BC,6911
-         LD   (HL),L
-         LDIR
-         XOR  A
-         OUT  (254),A
-         RET
+CLS     
+        xor  a
+        out  (254),a
+		ld	hl, 5AFFh
+		ld	de, 5AFEh
+		ld	bc, 1AFFh
+		ld	(hl), a
+		lddr			; Clear	videoram (black	screen)
+		ret
+        
 	endmodule

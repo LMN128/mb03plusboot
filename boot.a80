@@ -1,31 +1,123 @@
-	MODULE boot
-	DEVICE ZXSPECTRUM48
+	MODULE 	boot
+	DEVICE 	ZXSPECTRUM48
 	OUTPUT	boot.cod
-
+; ███████████████ M O V E  T O  S R A M ███████████████████████████████████████	
+			org 49000
+			di
+			ld a, 160
+			out (23),a
+			ld hl,49152
+			ld de,0
+			ld bc,16384
+			ldir
+			ld a,128
+			out (23),a
+			rst 0
+moveend			
+	BLOCK   (49152-moveend),0
 ; --------------- V A R I A B L E S ---------------------------------------			
 DMA 		equ #0B
+ULA			equ #FE
 zvukcompile	equ 60000 ; adresa zkopilovaneho zvuku 
 ; --------------- M A I N C O D E ---------------------------------------
 			org 49152
+maincode
+			
 //			org 0
+			DISP 0
 boot		di
 			ld sp,0
 			ld	a, #C3		; Z80DMA command: WR6: Reset
 			out	(DMA), a
 			xor	a
 			ld	i, a
+			out (ULA),a
+				ld	hl, 5AFFh
+				ld	de, 5AFEh
+				ld	bc, 1AFFh
+				ld	(hl), a
+				lddr			; Clear	videoram (black	screen)
+				
+	INCLUDE "effect.a80"		; Busy nonbootdisk effect
+/*				
+			ld bc, 203Bh		; ZXi portselect
+			out (c),a
+			ld a,8				; dissable monsterblaster till bsdos uses port 0Fh
+			ld bc, 213Bh		; ZXi port0 - Audio
+			out (c),a	
+*/			
+			in	a, (ULA)
+			cpl
+			and	1Fh
+			jr  z,endramtest	;testram if anykey
+;			jr endramtest
+; ███████████████ RAM TEST ███████████████████████████████████████
+;it's comes from legacy MB02+ bootloader version 003
 
-;			call ramtest.ramtest
-			ld hl,ramcodeinrom
+ramtest xor a					
+		ld 	hl, #4000
+		ld	de, #0608
+		ld	bc, 32765
+		out	(c), a
+
+ram_test_loop:								
+		cpl
+		ld	(hl), a
+		xor	(hl)
+		ld	(hl), a
+		xor	(hl)
+		jr	nz, ram_fault
+		inc	l
+		jr	nz, ram_test_loop
+		inc	h
+		jr	nz, ram_test_loop
+		ld	h, #C0				; RAM pages start address
+		ld	a, e
+		cp	d
+		jr	nz, no_page5		; Don't test RAM page 5 again
+		dec	e
+
+no_page5:				
+		cp	3					; Don't test RAM page 2 again
+		jr	nz, no_page2
+		dec	e
+
+no_page2:				
+		xor	a
+		dec	e
+		out	(c), e
+		jr	nz, ram_test_loop
+;endtest
+		jr endramtest
+
+ram_fault:				
+		ld	a, e
+		out	(254), a
+
+delay1:					
+		djnz	$
+		cpl
+		out	(254), a
+		ld	b, 7
+
+delay2:					
+		djnz	$
+		jr	ram_fault			
+; ███████████████ E N D  R A M  T E S T ███████████████████████████████████████			
+			
+skipramtest			
+
+endramtest	ld hl,ramcodeinrom
 			ld de,ramcode
 			ld bc,endramcode-ramcode
 			ldir
-;			jp 49152
 			jp ramcode
-	INCLUDE "ramtest.a80"			 ; running in rom
+
 ramcodeinrom	
-;			DISP 49152		
-ramcode			
+
+			ent						; restore address to compile to right place
+ramcode		
+
 			call cls.CLS
 			ld   a,71
 			ld   HL,22528
@@ -34,10 +126,10 @@ ramcode
 			ld   (HL),a
 			ldir
 			
-			ld   hl,TEXT1
+/*			ld   hl,TEXT1
 			ld   bc,#0107
-//			call t42.T42_TEXT
-			
+			call t42.T42_TEXT
+*/			
 			ld	bc,#0728
 			ld	(txy.cursor),bc
 			ld	hl,TEXT1
@@ -46,9 +138,6 @@ ramcode
 			ld de,#040A
 	        ld hl,CaroLogo
 			call sprite2.OK
-			
-			
-			
 ;carymary         
 			 ld bc,#0527
 			 ld de,#05d1
@@ -57,36 +146,103 @@ ramcode
 			 ld de,#10d1
 			 call draw_jugo.DRAW
 
-			ld	bc,#B8Cd
-			ld	(txy.cursor),bc
+			ld	bc,#B800
+			ld	(txy51.cursor),bc
 			ld	hl,TEXT0
-			call txy.txy         
-			
-			call iinkey.ANYKEY
-			
-			ld hl,easyhdd
-			ld de,32768
-			ld bc,easyhddend-easyhdd
-			ldir
-			
-			ld	bc,#B8D0
-			ld	(txy.cursor),bc
+			call txy51.txy
+			ld	bc,#B000
+			ld	(txy51.cursor),bc
 			ld	hl,TEXT2
-			call txy.txy
-			
-			call 32768
-/*
-1			call iinkey.IINKEY
-			jr z,1B
-			cp 'n'
-			jr nz,1B
+			call txy51.txy
+			;ld	bc,#B8CF
+			ld	bc,#11A9
+			ld	(txy51.cursor),bc
+			ld	hl,DATE
+			call txy51.txy		
+			ld	bc,#6035
+			ld	(txy51.cursor),bc
+			ld	hl,TEXT3
+			call txy51.txy
+/*			ld	bc,#9000
+			ld	(txy51.cursor),bc
+			ld	hl,TEXTTEST2
+			call txy51.txy			
 */			
+1			call iinkey.IINKEY		; waiting for key
+			jr z,1B
+			cp 11h					; break
+			jr nz,2F				; no break
+			xor a					; break
+			out (23),a 				; dissable MB03+ SRAM
+			ld bc,32765				; ZX128 rom
+			out (c),a
+			rst 0					; jp to 0
+2			
+			cp '1'					//key 1
+			jr nz,3F
+			ld a,129				; install bsrom from "rom"
+			out (23),a
+			ld hl,0
+			ld de,32768
+			ld bc,16384
+			ldir
+			ld a,96
+			out (23), a
+			ld hl,32768
+			ld de,0
+			ld bc,16384
+			ldir
+			ld a,130				; install bsrom from "rom"
+			out (23),a
+			ld hl,0
+			ld de,32768
+			ld bc,16384
+			ldir
+			ld a,97
+			out (23), a
+			ld hl,32768
+			ld de,0
+			ld bc,16384
+			ldir
 			ld a,64
 			out (23),a
-			jp 102 //NMI
+			jr 4F
+3			
+			cp '2'					; key 2
+			jr nz, 5F				
 			
-			ei
-			ret
+4			ld hl,easyhdd			; run EasyHDD
+			ld de,32768
+			ld bc,easyhddend-easyhdd
+			ldir					
+			call 32768
+			jr 6F
+
+5			cp 'e'					// key e
+			jr nz, 7F				// no key
+			
+6			ld a,64					// 128K reset in BSROM140
+			out (23),a
+			jp #3906				//jp to bsrom140
+			
+7			cp 'd'
+			jr nz, 8F				
+			
+			ld a,131
+			out (23),a
+			ld hl,0
+			ld de,27000
+			ld bc,6000
+			ldir
+			ld a,64
+			out (23),a
+			jp 27000
+			
+8			cp 't'					// key t - zx diagnostics
+			jp nz, 1B				// no key
+			ld a,132
+			out (23),a
+			rst 0
 ; --------------- L I B R A R I E S ---------------------------------------	
 	
 //INCLUDE "nasobeniHLDE.a80"
@@ -96,6 +252,7 @@ ramcode
 	INCLUDE "t42.a80"
 
 	INCLUDE "txy.a80"
+	INCLUDE "txy51.a80"
 CaroLogo
 	INCBIN "CaroLogo.bin"
 	INCLUDE "sprite2.a80"
@@ -131,10 +288,18 @@ zvukend
          defw EasyLogoSmall
 */		 
 ; --------------- T E X T---------------------------------------		 
-TEXT0    dc 16,7,"any key"
+TEXT0    dc 16,7,"break-ZXROM  1-BSDOS+EasyHDD  2-EasyHDD "
 TEXT1    dc 16,69,"MB03+ Ultimate firmware 1.28"
-TEXT2	 dc 16,0,"loading ..."
+TEXT2	 dc 16,7,"e-128K reset  d-Devastace+ t-Diag"
+TEXT3 	 dc 16,69,"LMN128 - Jan Kucera - Zlin/CZ"
+TEXTTEST dc 16,6,"0123456789 128 WADHTUTTUU ZX Spectrum 128+2"
+TEXTTEST2 dc 16,6,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwyxz LMN128 - Jan Kucera - Zlin/CZ"
+  LUA
+    sj.insert_define("TIME", '"' .. os.date("%Y%m%d") .. '"')
+  ENDLUA
+DATE	db 16,69,TIME
+		dc " " 
 endramcode			
-	ENDMODULE		
-	savesna "boot.sna",49152	
-	
+		
+	savesna "boot.sna",ramcode	
+	ENDMODULE	

@@ -1,0 +1,38 @@
+	DEVICE 	ZXSPECTRUM48
+	OUTPUT	restore.cod
+	
+	org 26000
+start	di
+		ld a,161
+		out (23),a
+		ld hl,32768
+		ld de,0
+		ld bc,16384
+		ldir
+		ld a,162
+		out (23),a
+		ld hl,49152
+		ld de,0
+		ld bc,16384
+		ldir
+		ld a,163
+		out (23),a
+		ld hl,27000
+		ld de,0
+		ld bc,6000
+		ldir
+		ld a,64
+		out (23),a
+		ei
+		ret
+		
+moveend1			
+	BLOCK   (27000-moveend1),0	
+	org 27000
+	INCBIN DevastMB27000.bin
+moveend2			
+	BLOCK   (32768-moveend2),0	
+	org 32768
+	INCBIN 64and65.bin
+	
+	savesna "restore.sna",start
