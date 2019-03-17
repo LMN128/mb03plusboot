@@ -4,6 +4,13 @@
 ; ███████████████ M O V E  T O  S R A M ███████████████████████████████████████	
 			org 49000
 			di
+			xor a
+			out (23),a
+			ld bc,#203B				//ZXi portselect
+			out (c),a
+			ld bc,#213B
+			ld a,1					//HW - 1 - MB03+
+			out (c),a
 			ld a, 160
 			out (23),a
 			ld hl,49152
@@ -21,6 +28,7 @@ ULA			equ #FE
 zvukcompile	equ 60000 ; adresa zkopilovaneho zvuku 
 ; --------------- M A I N C O D E ---------------------------------------
 			org 49152
+			
 maincode
 			
 //			org 0
@@ -119,50 +127,308 @@ ramcodeinrom
 ramcode		
 
 			call cls.CLS
-			ld   a,71
+			ld   a,7
 			ld   HL,22528
 			ld   DE,22529
 			ld   BC,767
 			ld   (HL),a
 			ldir
+			ld a,0
+			ld (txy32.orflag),a
+			ld a,66
+			ld (txy32.T32_ATT),a
+			ld	bc,#0000
+			call fall1
+			ld a,70
+			ld (txy32.T32_ATT),a
+			ld	bc,#0010
+			call fall1
+			ld a,68
+			ld (txy32.T32_ATT),a
+			ld	bc,#002E
+			call fall1
+			ld a,69
+			ld (txy32.T32_ATT),a
+			ld	bc,#0059
+			call fall1
+
+			ld a,1
+			ld (txy32.orflag),a
+			ld a,66
+			ld (txy32.T32_ATT),a
+			ld	bc,#0000
+			call fall2	
+			ld a,70
+			ld (txy32.T32_ATT),a
+			ld	bc,#0010
+			call fall2			
+			ld a,68
+			ld (txy32.T32_ATT),a
+			ld	bc,#0028
+			call fall3
+			ld a,69
+			ld (txy32.T32_ATT),a
+			ld	bc,#0058
+			call fall4
 			
-/*			ld   hl,TEXT1
-			ld   bc,#0107
-			call t42.T42_TEXT
-*/			
-			ld	bc,#0728
-			ld	(txy.cursor),bc
-			ld	hl,TEXT1
-			call txy.txy  
+			ld a,0
+			ld (txy32.orflag),a
+			ld a,69
+			ld (txy32.T32_ATT),a
+			ld	bc,#2A57
+			ld  de,#2A60
+			ld a,#4B
+			call wide1
+			ld b,1
+			call wait.wait
+			ld a,68
+			ld (txy32.T32_ATT),a
+			ld	bc,#2A2A
+			ld  de,#2A35
+			ld a,#1F
+			call wide1
+
+			ld hl, STRIPS
+			ld bc,#4800
+			ld	(txy32.cursor),bc
+			push hl
+			call txy32.txy
+			pop hl
+			ld bc,#A800
+			ld	(txy32.cursor),bc
+			call txy32.txy
+
+//			call iinkey.ANYKEY	
+			jp follow1
 			
-			ld de,#040A
+wide1		push af
+			push de
+			push bc
+			ld	(txy32.cursor),bc
+			ld a,132
+			call txy32.xy
+			pop bc
+			push bc
+			ld a,8
+			add a,b
+			ld b,a
+			ld a,134
+			ld	(txy32.cursor),bc
+			call txy32.xy
+			pop bc
+			pop de
+			push bc
+			push de
+			ld	(txy32.cursor),de
+			ld a,129
+			call txy32.xy
+			pop de
+			push de
+			ld a,8
+			add a,d
+			ld d,a
+			ld	(txy32.cursor),de
+			ld a,131
+			call txy32.xy
+			ld b,4
+			call wait.wait
+			pop de
+			pop bc
+			pop af
+			inc e
+			dec c
+			cp c
+			jr nz,wide1
+			ret
+			
+fall1		push bc
+			call singledot
+			ld b,1
+			call wait.wait
+			pop bc
+			inc b
+			ld a,#2B
+			cp b
+			jr nz,fall1
+			ret
+fall2		push bc
+			call halfdot
+			ld b,1
+			call wait.wait
+			pop bc
+			inc b
+			ld a,#2B
+			cp b
+			jr nz,fall2
+			ret			
+	
+fall3		push bc
+			call halfdot3
+			ld b,1
+			call wait.wait
+			pop bc
+			inc b
+			ld a,#2B
+			cp b
+			jr nz,fall3
+			ret	
+
+fall4		push bc
+			call halfdot4
+			ld b,1
+			call wait.wait
+			pop bc
+			inc b
+			ld a,#2B
+			cp b
+			jr nz,fall4
+			ret				
+	
+halfdot     ld	(txy32.cursor),bc
+			ld a,132
+			call txy32.xy
+			ld a,133
+			jp txy32.xy
+
+halfdot3    ld	(txy32.cursor),bc
+			ld a,136
+			call txy32.xy
+			ld a,137
+			jp txy32.xy	
+
+halfdot4    ld	(txy32.cursor),bc
+			ld a,138
+			call txy32.xy
+			ld a,139
+			jp txy32.xy	
+			
+singledot	ld	(txy32.cursor),bc
+			ld a,132
+			push bc
+			call txy32.xy
+			ld a,133
+			call txy32.xy
+			pop	bc
+			ld a,8
+			add a,b
+			ld b,a
+			ld	(txy32.cursor),bc	
+			ld a,134
+			call txy32.xy
+			ld a,135
+			call txy32.xy
+			ret
+
+follow1		ld de,#050F
+	        ld hl,ultimatelogo
+			ld a,13			// number of sprites in animations
+1			push af
+			push de
+			push hl
+			call sprite2.OK
+			ld b,12
+			call wait.wait
+			pop hl
+			ld de,20			// lenght of sprite2
+			add hl,de
+			pop de
+			inc e
+			pop af
+			dec a
+			jr nz,1B
+//Ultimate		
+			ld de,#0500
+	        ld hl,dots+38*0
+			ld a,6			// number of sprites in animations
+2			push af
+			push de
+			push hl
+//			call sprite2.OK
+			ld b,9
+			call wait.wait
+			pop hl
+			pop de
+			inc e
+			inc e
+			pop af
+			dec a
+			jr nz,2B
+			
+			ld de,#0000
+	        ld hl,MB03pluslogo
+			call sprite2.OK
+/*			ld de,#040A
 	        ld hl,CaroLogo
 			call sprite2.OK
+*/
 ;carymary         
-			 ld bc,#0527
-			 ld de,#05d1
-			 call draw_jugo.DRAW
-			 ld bc,#1027
-			 ld de,#10d1
+			 ld bc,#4800
+			 ld de,#48ff
 			 call draw_jugo.DRAW
 
-			ld	bc,#B800
+			ld	bc,#3D7A
 			ld	(txy51.cursor),bc
 			ld	hl,TEXT0
+			call txy51.txy
+			ld	bc,#B800
+			ld	(txy51.cursor),bc
+			ld	hl,TEXT3
 			call txy51.txy
 			ld	bc,#B000
 			ld	(txy51.cursor),bc
 			ld	hl,TEXT2
 			call txy51.txy
-			;ld	bc,#B8CF
-			ld	bc,#11A9
+			ld	bc,#A6B1
+			ld	(txy51.cursor),bc
+			ld	hl,FW1
+			call txy51.txy
+			ld	bc,#A6D9
 			ld	(txy51.cursor),bc
 			ld	hl,DATE
 			call txy51.txy		
-			ld	bc,#6035
+
+			ld	bc,#5000
 			ld	(txy51.cursor),bc
-			ld	hl,TEXT3
+			ld	hl,HW1
 			call txy51.txy
+			ld	bc,#5803
+			ld	(txy51.cursor),bc
+			ld	hl,HW2
+			call txy51.txy
+			ld	bc,#6003
+			ld	(txy51.cursor),bc
+			ld	hl,HW3
+			call txy51.txy
+			ld	bc,#6803
+			ld	(txy51.cursor),bc
+			ld	hl,HW4
+			call txy51.txy
+			ld	bc,#7003
+			ld	(txy51.cursor),bc
+			ld	hl,HW5
+			call txy51.txy
+			ld	bc,#7803
+			ld	(txy51.cursor),bc
+			ld	hl,HW6
+			call txy51.txy
+
+			ld	bc,#8000
+			ld	(txy51.cursor),bc
+			ld	hl,CONF1
+			call txy51.txy
+			ld	bc,#8803
+			ld	(txy51.cursor),bc
+			ld	hl,CONF2
+			call txy51.txy
+			ld	bc,#9003
+			ld	(txy51.cursor),bc
+			ld	hl,CONF3
+//carymary2
+			call txy51.txy		
+			 ld bc,#AE00
+			 ld de,#AEff
+			 call draw_jugo.DRAW
+			
 /*			ld	bc,#9000
 			ld	(txy51.cursor),bc
 			ld	hl,TEXTTEST2
@@ -239,27 +505,77 @@ ramcode
 			jp 27000
 			
 8			cp 't'					// key t - zx diagnostics
-			jp nz, 1B				// no key
+			jr nz, 9F				// no key
 			ld a,132
 			out (23),a
 			rst 0
+9			cp 'p'					// key p - Papaya DOS- ESXDOS
+			jr nz, 10F				
+			xor a
+			out (23),a
+			ld bc,#203B				//ZXi portselect
+			out (c),a
+			ld bc,#213B
+			ld a,2					//HW - 2 - DIVMMC/DIVIDE
+			out (c),a
+			ld bc,#203B				//ZXi portselect 
+			ld a,2
+			out (c),a
+			ld bc,#213B
+			ld a,2					//IDE - 2 PVL ports- DIVMMC/DIVIDE
+			out (c),a
+			ld a,128
+div_erase	out (#E3),a
+			ld hl,8192
+			ld de,8193
+			ld bc,8191
+			ld (hl),l
+			ldir
+			inc a
+			cp 128+5
+			jr nz,div_erase			//delete first 32KB od DivIde RAM
+			xor a					//is enought to erase bank0 or
+			out (#E3),a				//to force cold start zero $2dXX in page 0
+			rst 0
+10			cp "R"					//restart firmware
+			jr nz, 11F
+			rst 0
+11			cp "l"					//Level 1 demo in 5 page
+			jp nz, 1B
+			ld a,133
+			out (23),a
+			ld hl,0
+			ld de,26624
+			ld bc,7903
+			ldir
+			xor a
+			out (23),a
+			ld sp,26000
+			jp 26624
+			
 ; --------------- L I B R A R I E S ---------------------------------------	
 	
 //INCLUDE "nasobeniHLDE.a80"
 	INCLUDE "draw-jugo.a80"
 	INCLUDE "cls.a80"
 	INCLUDE "iinkey.a80"
-	INCLUDE "t42.a80"
-
-	INCLUDE "txy.a80"
+	INCLUDE "wait.a80"
+//	INCLUDE "t42.a80"
+//	INCLUDE "txy.a80"
 	INCLUDE "txy51.a80"
-CaroLogo
-	INCBIN "CaroLogo.bin"
+	INCLUDE "txy32.a80"
 	INCLUDE "sprite2.a80"
+MB03pluslogo
+	INCBIN "MB03+LOGOv2.bin"
+ultimatelogo	
+	INCBIN "ULTIMATE.bin"
+dots	
+//	INCBIN "DOTS.bin"	
+/*CaroLogo
+	INCBIN "CaroLogo.bin" */
 /*
 NewdimLogo
 	INCBIN "NewdimLogo.bin"
-
 eightbc_i
 	INCBIN "8BC_I.cde"
 EasyLogoSmall
@@ -287,19 +603,47 @@ zvukend
          defb 25,2
          defw EasyLogoSmall
 */		 
-; --------------- T E X T---------------------------------------		 
-TEXT0    dc 16,7,"break-ZXROM  1-BSDOS+EasyHDD  2-EasyHDD "
+; --------------- T E X T---------------------------------------
+TEXT0 	 dc 16,69,"LMN128-Jan Kucera-Zlin/CZ"		 
+TEXT3    dc 16,6,"break-ZXROM  1-BSDOS+EasyHDD  2-EasyHDD "
 TEXT1    dc 16,69,"MB03+ Ultimate firmware 1.28"
-TEXT2	 dc 16,7,"e-128K reset  d-Devastace+ t-Diag"
-TEXT3 	 dc 16,69,"LMN128 - Jan Kucera - Zlin/CZ"
+TEXT2	 dc 16,6,"e-128K reset  d-Devastace+  t-Diag  p-ESXDOS "
+STRIPS	db 16,66,32,32
+		db 16,70,32,32
+		db 16,68,32,32,32,32,32
+		dc 16,69,32,32,32,32,32+128
+
 TEXTTEST dc 16,6,"0123456789 128 WADHTUTTUU ZX Spectrum 128+2"
-TEXTTEST2 dc 16,6,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwyxz LMN128 - Jan Kucera - Zlin/CZ"
-  LUA
-    sj.insert_define("TIME", '"' .. os.date("%Y%m%d") .. '"')
-  ENDLUA
-DATE	db 16,69,TIME
+TEXTTEST2 dc 16,6,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwyxz"
+HW1		db 16,67,"HARDWARE: "
+		dc 16,7,"1.0"
+HW2		db 16,3,"FPGA: "
+		dc 16,7,"Xilinx SPARTAN-6 XC6SLX9 / 100 MHz"
+HW3		db 16,3,"RTC: "
+		dc 16,7,"Maxim DS3234"
+HW4		db 16,3,"SRAM: " 
+		dc 16,7,"8192 KBytes"
+HW5		db 16,3,"STORAGE: "
+		dc 16,7,"CompactFlash, microSD"
+HW6		db 16,3,"OTHERS: "
+		dc 16,7,"USB, Wifi ESP8266, Atmel MEGA32U4, 8xLED"
+
+CONF1	db 16,67,"CONFIGURATION: "
+		dc 16,7,"1.5"
+CONF2	db 16,3,"TurboSound: "
+		db 16,7,"ON  ",16,3,"SounDrive: ",16,7,"ON  ",16,3,"SAA1099: "
+		dc 16,7,"ON"
+CONF3	db 16,3,"DMA: "
+		db 16,7,"ON  ",16,3,"IDE: ",16,7,"ON  ",16,3,"SD: ",16,7,"ON  ",16,3,"RTC: ",16,7,"OFF ",16,3,"Wifi: "
+		dc 16,7,"OFF"		
+FW1		dc 16,0,"FW:1.28/"
+DATE	db 16,0
+		  LUA ALLPASS
+			_pc('db	"' .. os.date("%Y%m%d") .. '"') 
+		  ENDLUA
 		dc " " 
+		//block 8 // kompenzace delky souboru kvuli os.date
 endramcode			
 		
-	savesna "boot.sna",ramcode	
+	savesna "boot.sna",ramcode//maincode//ramcode	
 	ENDMODULE	

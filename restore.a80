@@ -3,6 +3,13 @@
 	
 	org 26000
 start	di
+		xor a
+		out (23),a
+		ld bc,#203B				//ZXi portselect
+		out (c),a
+		ld bc,#213B
+		ld a,1					//HW - 1 - MB03+
+		out (c),a
 		ld a,161
 		out (23),a
 		ld hl,32768
@@ -35,4 +42,4 @@ moveend2
 	org 32768
 	INCBIN 64and65.bin
 	
-	savesna "restore.sna",start
+//	savesna "restore.sna",start

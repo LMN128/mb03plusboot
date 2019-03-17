@@ -1,12 +1,7 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Poziciovy print 42*27 znakov ;
-;  + znakovy subor 6*7 bodov   ;
-; (vytvoreny pre disasembler)  ;
-; . -28.05.1988- Busy software ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;DEMO:napiste:asm,dbg,rpp,g
+//LMN128-Jan Kucera-Zlin/CZ
+//added OR Flag
 //Original by BusySoft
-	MODULE txy51
+	MODULE txy32
 txy	 	 ld   a,(hl)
          and  127
 /*         cp   13
@@ -21,7 +16,7 @@ txy	 	 ld   a,(hl)
          cp   c
          jr   c,T42_ZMEN
          inc  c */
-T42_BACK ld   a,(hl)
+T32_BACK ld   a,(hl)
          rla
          ret  c
          inc  hl
@@ -30,56 +25,22 @@ T42_BACK ld   a,(hl)
 colorchange
 			inc hl
 			ld a,(hl)
-			ld (T42_ATT),a
-			jr T42_BACK	
-T42_ATT		defb 0	
+			ld (T32_ATT),a
+			jr T32_BACK	
+T32_ATT		defb 0	
 
-//exampleBusy
-/*
-start	ld	hl,#4000
-	ld	de,#4001
-	ld	bc,#17ff
-	ld	(hl),#00
-	ldir
-	ld	hl,#0202
-	ld	(cursor),hl
-	ld	hl,text
-aaa	ld	a,(hl)
-	call	xy
-	inc	hl
-	jr	nz,aaa
-	ld	a,' '
-bbb	ld	b,a
-	call	xy
-	ld	a,b
-	inc	a
-	cp	#80
-	jr	c,bbb
-	ld	hl,#2758
-	exx
-	ret
-
-text	db	'*** Rutina print'
-		db	' 42*27 znakov v '
-		db	'obraze ***'
-		db	'        Priklad '
-		db	'vypisu:         '
-		db	'          '
-		db	#00
-		*/
-;main code
 xy	and	a
 	ret	z
 	exx
 	ld	bc,(cursor)
-xy8	ld	de,znaky
+xy8	ld	de,boot.txy51.znaky
 	ld	h,#00
 	ld	l,a
 	add	hl,hl
 	add	hl,hl
 	add	hl,hl
 	add	hl,de
-	push	hl
+	push hl
 	pop	iy
 	ld	xh,#08
 xy8dd	ld	a,b
@@ -111,44 +72,67 @@ xy8dd	ld	a,b
 	and 07
 
 	ld	d,(iy+#00)
-	ld	e,#00
-	jr	z,xy8bb
-xy8cc	rr	d
+//	ld	e,#00
+	jr	z,xy8bbnew 		//kulata pozice, staci vypsat jen jeden atribut
+	ld e,0
+xy8cc rr	d
 	rr	e
 	dec	a
-	jr	nz,xy8cc
-xy8bb	ld	a,d
+	jr	nz,xy8cc   
+xy8bb
+	ld a,(orflag)
+	and a
+	ld a,d
+	jr nz,1F
 	or	(hl)
-	ld	(hl),a
+1	ld	(hl),a
+    call T32_COLOR
 	inc	hl
-	ld	a,e
-	or	(hl)
-	ld	(hl),a
-	inc	b
+	ld a,(orflag)
+	and a
+	ld a,e
+	jr nz,2F
+	or	(hl)				
+2	ld	(hl),a
+    call T32_COLOR
+3	inc	b
 	inc	iy
 	dec	xh
-	jr	nz,xy8dd
-	call T51_COLOR
+//    call T32_COLOR
+	jp	nz,xy8dd
+//	call T32_COLOR
 xyend	ld	ix,flag0
 	ld	a,(ix+#04)
-	add	a,5
+	add	a,8
 	ld	(ix+#04),a
-	cp	255-2
+	cp	255-7
 	jr	c,xystop
 	ld	(ix+#04),2
 	ld	a,(ix+#05)
-	add	a,7
+	add	a,8
 	ld	(ix+#05),a
 xystop	exx
 	ret
-
-T51_COLOR
-				ld a,(T42_ATT)
+xy8bbnew
+	ld a,(orflag)
+	and a
+	ld a,d
+	jr nz,4F
+	or (hl)
+4	ld (hl),a
+    call T32_COLOR
+	inc hl
+	jr 3B
+	
+T32_COLOR		push af
+				ld a,(T32_ATT)
 				or a
 				ret z
+				push hl
 ; pokud je nula, tak se neobarvuje
-				dec h
-				dec l
+
+//				inc h
+//				inc l
 
 				ld a,h
 				rrca
@@ -157,8 +141,10 @@ T51_COLOR
 				and 3
 				or 88
 				ld h,a
-				ld a,(T42_ATT)
+				ld a,(T32_ATT)
 				ld (hl),a
+				pop hl
+				pop af
 				ret
 ;systemove premenne:(pre disu)
 
@@ -173,7 +159,9 @@ yyy	db	#00
 leni	dw	0
 adr	dw	0
 
-znaky
- INCBIN zx51.ch6
+
+orflag  db  #01
+//znaky
+// INCBIN zx51.ch6
 
 	ENDMODULE
