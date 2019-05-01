@@ -54,7 +54,7 @@ boot		di
 			ld bc, 213Bh		; ZXi port0 - Audio
 			out (c),a	
 */			
-			in	a, (ULA)
+/*			in	a, (ULA)
 			cpl
 			and	1Fh
 			jr  z,endramtest	;testram if anykey
@@ -112,7 +112,7 @@ delay2:
 		djnz	$
 		jr	ram_fault			
 ; ███████████████ E N D  R A M  T E S T ███████████████████████████████████████			
-			
+*/			
 skipramtest			
 
 endramtest	ld hl,ramcodeinrom
@@ -125,7 +125,7 @@ ramcodeinrom
 
 			ent						; restore address to compile to right place
 ramcode		
-
+			di						; for sna test
 			call cls.CLS
 			ld   a,7
 			ld   HL,22528
@@ -139,37 +139,53 @@ ramcode
 			ld (txy32.T32_ATT),a
 			ld	bc,#0000
 			call fall1
+				call iinkey.IINKEY		; waiting for key
+				jp nz,skipanim
 			ld a,70
 			ld (txy32.T32_ATT),a
 			ld	bc,#0010
 			call fall1
+				call iinkey.IINKEY		; waiting for key
+				jp nz,skipanim			
 			ld a,68
 			ld (txy32.T32_ATT),a
 			ld	bc,#002E
 			call fall1
+				call iinkey.IINKEY		; waiting for key
+				jp nz,skipanim			
 			ld a,69
 			ld (txy32.T32_ATT),a
 			ld	bc,#0059
 			call fall1
-
+				call iinkey.IINKEY		; waiting for key
+				jp nz,skipanim
+				
 			ld a,1
 			ld (txy32.orflag),a
 			ld a,66
 			ld (txy32.T32_ATT),a
 			ld	bc,#0000
-			call fall2	
+			call fall2
+				call iinkey.IINKEY		; waiting for key
+				jp nz,skipanim			
 			ld a,70
 			ld (txy32.T32_ATT),a
 			ld	bc,#0010
 			call fall2			
+				call iinkey.IINKEY		; waiting for key
+				jp nz,skipanim			
 			ld a,68
 			ld (txy32.T32_ATT),a
 			ld	bc,#0028
 			call fall3
+				call iinkey.IINKEY		; waiting for key
+				jp nz,skipanim			
 			ld a,69
 			ld (txy32.T32_ATT),a
 			ld	bc,#0058
 			call fall4
+				call iinkey.IINKEY		; waiting for key
+				jp nz,skipanim			
 			
 			ld a,0
 			ld (txy32.orflag),a
@@ -179,6 +195,8 @@ ramcode
 			ld  de,#2A60
 			ld a,#4B
 			call wide1
+				call iinkey.IINKEY		; waiting for key
+				jp nz,skipanim			
 			ld b,1
 			call wait.wait
 			ld a,68
@@ -187,6 +205,8 @@ ramcode
 			ld  de,#2A35
 			ld a,#1F
 			call wide1
+				call iinkey.IINKEY		; waiting for key
+				jp nz,skipanim			
 
 			ld hl, STRIPS
 			ld bc,#4800
@@ -353,7 +373,7 @@ follow1		ld de,#050F
 			pop af
 			dec a
 			jr nz,2B
-			
+skipanim			
 			ld de,#0000
 	        ld hl,MB03pluslogo
 			call sprite2.OK
@@ -440,7 +460,11 @@ follow1		ld de,#050F
 			jr nz,2F				; no break
 			xor a					; break
 			out (23),a 				; dissable MB03+ SRAM
-			ld bc,32765				; ZX128 rom
+									;ZX128+2A rom
+			ld bc,8189
+			out (c),a
+			
+			ld bc,32765				; ZX128 rom0 
 			out (c),a
 			rst 0					; jp to 0
 2			
@@ -509,7 +533,7 @@ follow1		ld de,#050F
 			ld a,132
 			out (23),a
 			rst 0
-9			cp 'p'					// key p - Papaya DOS- ESXDOS
+9			cp 'p'					// key p - Papaya DOS- ESXDOS DivMMC
 			jr nz, 10F				
 			xor a
 			out (23),a
@@ -522,7 +546,7 @@ follow1		ld de,#050F
 			ld a,2
 			out (c),a
 			ld bc,#213B
-			ld a,2					//IDE - 2 PVL ports- DIVMMC/DIVIDE
+			xor a					//IDE - 0 dissable
 			out (c),a
 			ld a,128
 div_erase	out (#E3),a
@@ -540,18 +564,34 @@ div_erase	out (#E3),a
 10			cp "R"					//restart firmware
 			jr nz, 11F
 			rst 0
-11			cp "l"					//Level 1 demo in 5 page
+11			cp "l"					//DivIDE
 			jp nz, 1B
-			ld a,133
-			out (23),a
-			ld hl,0
-			ld de,26624
-			ld bc,7903
-			ldir
 			xor a
 			out (23),a
-			ld sp,26000
-			jp 26624
+			ld bc,#203B				//ZXi portselect
+			out (c),a
+			ld bc,#213B
+			ld a,2					//HW - 2 - DIVMMC/DIVIDE
+			out (c),a
+			ld bc,#203B				//ZXi portselect 
+			ld a,2
+			out (c),a
+			ld bc,#213B
+			ld a,2					//IDE - 2 PVL ports- DIVMMC/DIVIDE
+			out (c),a
+			ld a,128
+div_erase2	out (#E3),a
+			ld hl,8192
+			ld de,8193
+			ld bc,8191
+			ld (hl),l
+			ldir
+			inc a
+			cp 128+5
+			jr nz,div_erase2			//delete first 32KB od DivIde RAM
+			xor a					//is enought to erase bank0 or
+			out (#E3),a				//to force cold start zero $2dXX in page 0
+			rst 0
 			
 ; --------------- L I B R A R I E S ---------------------------------------	
 	
@@ -605,9 +645,9 @@ zvukend
 */		 
 ; --------------- T E X T---------------------------------------
 TEXT0 	 dc 16,69,"LMN128-Jan Kucera-Zlin/CZ"		 
-TEXT3    dc 16,6,"break-ZXROM  1-BSDOS+EasyHDD  2-EasyHDD "
+TEXT3    dc 16,6,"break-ZXROM  1-BSDOS+EasyHDD  2-EasyHDD  l-DivIDE "
 TEXT1    dc 16,69,"MB03+ Ultimate firmware 1.28"
-TEXT2	 dc 16,6,"e-128K reset  d-Devastace+  t-Diag  p-ESXDOS "
+TEXT2	 dc 16,6,"e-128K reset  d-Devastace+  t-Diag  p-DivMMC "
 STRIPS	db 16,66,32,32
 		db 16,70,32,32
 		db 16,68,32,32,32,32,32
@@ -616,25 +656,25 @@ STRIPS	db 16,66,32,32
 TEXTTEST dc 16,6,"0123456789 128 WADHTUTTUU ZX Spectrum 128+2"
 TEXTTEST2 dc 16,6,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwyxz"
 HW1		db 16,67,"HARDWARE: "
-		dc 16,7,"1.0"
+		dc 16,7,"2.0"
 HW2		db 16,3,"FPGA: "
-		dc 16,7,"Xilinx SPARTAN-6 XC6SLX9 / 100 MHz"
+		dc 16,7,"Xilinx SPARTAN 7 XC7S50 / 100 MHz"
 HW3		db 16,3,"RTC: "
 		dc 16,7,"Maxim DS3234"
-HW4		db 16,3,"SRAM: " 
-		dc 16,7,"8192 KBytes"
+HW4		db 16,3,"SRAM: ",16,7,"16384 KBytes ",16,3,"FastSRAM: "
+		dc 16,7,"4096 KBytes"
 HW5		db 16,3,"STORAGE: "
-		dc 16,7,"CompactFlash, microSD"
+		dc 16,7,"CompactFlash, 2x microSD"
 HW6		db 16,3,"OTHERS: "
-		dc 16,7,"USB, Wifi ESP8266, Atmel MEGA32U4, 8xLED"
+		dc 16,7,"USB, Wifi ESP8266, Matrix 8x8 LEDs"
 
 CONF1	db 16,67,"CONFIGURATION: "
-		dc 16,7,"1.5"
-CONF2	db 16,3,"TurboSound: "
+		dc 16,7,"1.9"
+CONF2	db 16,3,"3xAY/TurboSound: "
 		db 16,7,"ON  ",16,3,"SounDrive: ",16,7,"ON  ",16,3,"SAA1099: "
 		dc 16,7,"ON"
 CONF3	db 16,3,"DMA: "
-		db 16,7,"ON  ",16,3,"IDE: ",16,7,"ON  ",16,3,"SD: ",16,7,"ON  ",16,3,"RTC: ",16,7,"OFF ",16,3,"Wifi: "
+		db 16,7,"ON  ",16,3,"IDE: ",16,7,"ON  ",16,3,"SD: ",16,7,"ON  ",16,3,"RTC: ",16,7,"ON ",16,3,"Wifi: "
 		dc 16,7,"OFF"		
 FW1		dc 16,0,"FW:1.28/"
 DATE	db 16,0
