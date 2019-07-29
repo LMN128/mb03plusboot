@@ -1,52 +1,53 @@
 001   0000             	MODULE 	boot
 002   0000             	DEVICE 	ZXSPECTRUM48
 003   0000             	OUTPUT	boot.cod
-004   0000             ; ███████████████ M O V E  T O  S R A M ███████████████████████████████████████	
-005   0000             			org 49000
-006   BF68 F3          			di
-007   BF69 AF          			xor a
-008   BF6A D3 17       			out (23),a
-009   BF6C 01 3B 20    			ld bc,#203B				//ZXi portselect
-010   BF6F ED 79       			out (c),a
-011   BF71 01 3B 21    			ld bc,#213B
-012   BF74 3E 01       			ld a,1					//HW - 1 - MB03+
-013   BF76 ED 79       			out (c),a
-014   BF78 3E A0       			ld a, 160
-015   BF7A D3 17       			out (23),a
-016   BF7C 21 00 C0    			ld hl,49152
-017   BF7F 11 00 00    			ld de,0
-018   BF82 01 00 40    			ld bc,16384
-019   BF85 ED B0       			ldir
-020   BF87 3E 80       			ld a,128
-021   BF89 D3 17       			out (23),a
-022   BF8B C7          			rst 0
-023   BF8C             moveend			
-024   BF8C 00          	BLOCK   (49152-moveend),0
-025   C000             ; --------------- V A R I A B L E S ---------------------------------------			
-026   C000             DMA 		equ #0B
-027   C000             ULA			equ #FE
-028   C000             zvukcompile	equ 60000 ; adresa zkopilovaneho zvuku 
-029   C000             ; --------------- M A I N C O D E ---------------------------------------
-030   C000             			org 49152
-031   C000             			
-032   C000             maincode
+004   0000             	/*
+005   0000~            ; ███████████████ M O V E  T O  S R A M ███████████████████████████████████████	
+006   0000~            			org 49000
+007   0000~            			di
+008   0000~            			xor a
+009   0000~            			out (23),a
+010   0000~            			ld bc,#203B				//ZXi portselect
+011   0000~            			out (c),a
+012   0000~            			ld bc,#213B
+013   0000~            			ld a,1					//HW - 1 - MB03+
+014   0000~            			out (c),a
+015   0000~            			ld a, 160
+016   0000~            			out (23),a
+017   0000~            			ld hl,49152
+018   0000~            			ld de,0
+019   0000~            			ld bc,16384
+020   0000~            			ldir
+021   0000~            			ld a,128
+022   0000~            			out (23),a
+023   0000~            			rst 0
+024   0000~            moveend			
+025   0000~            	BLOCK   (49152-moveend),0
+026   0000             */	
+027   0000             ; --------------- V A R I A B L E S ---------------------------------------			
+028   0000             DMA 		equ #0B
+029   0000             ULA			equ #FE
+030   0000             zvukcompile	equ 60000 ; adresa zkopilovaneho zvuku 
+031   0000             ; --------------- M A I N C O D E ---------------------------------------
+032   0000             			org 49152
 033   C000             			
-034   C000             //			org 0
-035   C000             			DISP 0
-036   0000 F3          boot		di
-037   0001 31 00 00    			ld sp,0
-038   0004 3E C3       			ld	a, #C3		; Z80DMA command: WR6: Reset
-039   0006 D3 0B       			out	(DMA), a
-040   0008 AF          			xor	a
-041   0009 ED 47       			ld	i, a
-042   000B D3 FE       			out (ULA),a
-043   000D 21 FF 5A    				ld	hl, 5AFFh
-044   0010 11 FE 5A    				ld	de, 5AFEh
-045   0013 01 FF 1A    				ld	bc, 1AFFh
-046   0016 77          				ld	(hl), a
-047   0017 ED B8       				lddr			; Clear	videoram (black	screen)
-048   0019             				
-049   0019             	INCLUDE "effect.a80"		; Busy nonbootdisk effect
+034   C000             maincode
+035   C000             			
+036   C000             //			org 0
+037   C000             			DISP 0
+038   0000 F3          boot		di
+039   0001 31 00 00    				ld sp,0
+040   0004 3E C3       				ld	a, #C3		; Z80DMA command: WR6: Reset
+041   0006 D3 0B       				out	(DMA), a
+042   0008 AF          				xor	a
+043   0009 ED 47       				ld	i, a
+044   000B D3 FE       				out (ULA),a
+045   000D 21 FF 5A    				ld	hl, 5AFFh
+046   0010 11 FE 5A    				ld	de, 5AFEh
+047   0013 01 FF 1A    				ld	bc, 1AFFh
+048   0016 77          				ld	(hl), a
+049   0017 ED B8       				lddr			; Clear	videoram (black	screen)				
+050   0019             	INCLUDE "effect.a80"		; Busy nonbootdisk effect
 001+  0019             ;	DEVICE	ZXSPECTRUM48
 002+  0019             ;	OUTPUT	effect.cod
 003+  0019             ;	org	#8000
@@ -96,1401 +97,1564 @@
 047+  0056             ;	OUTEND
 048+  0056             ;	SAVESNA	"effect.sna",start
 049+  0056             
-050   0056             /*				
-051   0056~            			ld bc, 203Bh		; ZXi portselect
-052   0056~            			out (c),a
-053   0056~            			ld a,8				; dissable monsterblaster till bsdos uses port 0Fh
-054   0056~            			ld bc, 213Bh		; ZXi port0 - Audio
-055   0056~            			out (c),a	
-056   0056             */			
-057   0056             /*			in	a, (ULA)
-058   0056~            			cpl
-059   0056~            			and	1Fh
-060   0056~            			jr  z,endramtest	;testram if anykey
-061   0056~            ;			jr endramtest
-062   0056~            ; ███████████████ RAM TEST ███████████████████████████████████████
-063   0056~            ;it's comes from legacy MB02+ bootloader version 003
-064   0056~            
-065   0056~            ramtest xor a					
-066   0056~            		ld 	hl, #4000
-067   0056~            		ld	de, #0608
-068   0056~            		ld	bc, 32765
-069   0056~            		out	(c), a
-070   0056~            
-071   0056~            ram_test_loop: 								
-072   0056~            		cpl
-073   0056~            		ld	(hl), a
-074   0056~            		xor	(hl)
-075   0056~            		ld	(hl), a
-076   0056~            		xor	(hl)
-077   0056~            		jr	nz, ram_fault
-078   0056~            		inc	l
-079   0056~            		jr	nz, ram_test_loop
-080   0056~            		inc	h
-081   0056~            		jr	nz, ram_test_loop
-082   0056~            		ld	h, #C0				; RAM pages start address
-083   0056~            		ld	a, e
-084   0056~            		cp	d
-085   0056~            		jr	nz, no_page5		; Don't test RAM page 5 again
-086   0056~            		dec	e
-087   0056~            
-088   0056~            no_page5: 				
-089   0056~            		cp	3					; Don't test RAM page 2 again
-090   0056~            		jr	nz, no_page2
-091   0056~            		dec	e
-092   0056~            
-093   0056~            no_page2: 				
-094   0056~            		xor	a
-095   0056~            		dec	e
-096   0056~            		out	(c), e
-097   0056~            		jr	nz, ram_test_loop
-098   0056~            ;endtest
-099   0056~            		jr endramtest
-100   0056~            
-101   0056~            ram_fault: 				
-102   0056~            		ld	a, e
-103   0056~            		out	(254), a
-104   0056~            
-105   0056~            delay1: 					
-106   0056~            		djnz	$
-107   0056~            		cpl
-108   0056~            		out	(254), a
-109   0056~            		ld	b, 7
-110   0056~            
-111   0056~            delay2: 					
-112   0056~            		djnz	$
-113   0056~            		jr	ram_fault			
-114   0056~            ; ███████████████ E N D  R A M  T E S T ███████████████████████████████████████			
-115   0056             */			
-116   0056             skipramtest			
-117   0056             
-118   0056 21 64 00    endramtest	ld hl,ramcodeinrom
-119   0059 11 64 C0    			ld de,ramcode
-120   005C 01 FD 3C    			ld bc,endramcode-ramcode
-121   005F ED B0       			ldir
-122   0061 C3 64 C0    			jp ramcode
-123   0064             
-124   0064             ramcodeinrom	
-125   0064             
-126   0064             			ent						; restore address to compile to right place
-127   C064             ramcode		
-128   C064 F3          			di						; for sna test
-129   C065 CD 21 C5    			call cls.CLS
-130   C068 3E 07       			ld   a,7
-131   C06A 21 00 58    			ld   HL,22528
-132   C06D 11 01 58    			ld   DE,22529
-133   C070 01 FF 02    			ld   BC,767
-134   C073 77          			ld   (HL),a
-135   C074 ED B0       			ldir
-136   C076 3E 00       			ld a,0
-137   C078 32 84 CF    			ld (txy32.orflag),a
-138   C07B 3E 42       			ld a,66
-139   C07D 32 D1 CE    			ld (txy32.T32_ATT),a
-140   C080 01 00 00    			ld	bc,#0000
-141   C083 CD 9F C1    			call fall1
-142   C086 CD 3E C5    				call iinkey.IINKEY		; waiting for key
-143   C089 C2 66 C2    				jp nz,skipanim
-144   C08C 3E 46       			ld a,70
-145   C08E 32 D1 CE    			ld (txy32.T32_ATT),a
-146   C091 01 10 00    			ld	bc,#0010
-147   C094 CD 9F C1    			call fall1
-148   C097 CD 3E C5    				call iinkey.IINKEY		; waiting for key
-149   C09A C2 66 C2    				jp nz,skipanim			
-150   C09D 3E 44       			ld a,68
-151   C09F 32 D1 CE    			ld (txy32.T32_ATT),a
-152   C0A2 01 2E 00    			ld	bc,#002E
-153   C0A5 CD 9F C1    			call fall1
-154   C0A8 CD 3E C5    				call iinkey.IINKEY		; waiting for key
-155   C0AB C2 66 C2    				jp nz,skipanim			
-156   C0AE 3E 45       			ld a,69
-157   C0B0 32 D1 CE    			ld (txy32.T32_ATT),a
-158   C0B3 01 59 00    			ld	bc,#0059
-159   C0B6 CD 9F C1    			call fall1
-160   C0B9 CD 3E C5    				call iinkey.IINKEY		; waiting for key
-161   C0BC C2 66 C2    				jp nz,skipanim
-162   C0BF             				
-163   C0BF 3E 01       			ld a,1
-164   C0C1 32 84 CF    			ld (txy32.orflag),a
-165   C0C4 3E 42       			ld a,66
-166   C0C6 32 D1 CE    			ld (txy32.T32_ATT),a
-167   C0C9 01 00 00    			ld	bc,#0000
-168   C0CC CD B0 C1    			call fall2
-169   C0CF CD 3E C5    				call iinkey.IINKEY		; waiting for key
-170   C0D2 C2 66 C2    				jp nz,skipanim			
-171   C0D5 3E 46       			ld a,70
-172   C0D7 32 D1 CE    			ld (txy32.T32_ATT),a
-173   C0DA 01 10 00    			ld	bc,#0010
-174   C0DD CD B0 C1    			call fall2			
-175   C0E0 CD 3E C5    				call iinkey.IINKEY		; waiting for key
-176   C0E3 C2 66 C2    				jp nz,skipanim			
-177   C0E6 3E 44       			ld a,68
-178   C0E8 32 D1 CE    			ld (txy32.T32_ATT),a
-179   C0EB 01 28 00    			ld	bc,#0028
-180   C0EE CD C1 C1    			call fall3
-181   C0F1 CD 3E C5    				call iinkey.IINKEY		; waiting for key
-182   C0F4 C2 66 C2    				jp nz,skipanim			
-183   C0F7 3E 45       			ld a,69
-184   C0F9 32 D1 CE    			ld (txy32.T32_ATT),a
-185   C0FC 01 58 00    			ld	bc,#0058
-186   C0FF CD D2 C1    			call fall4
-187   C102 CD 3E C5    				call iinkey.IINKEY		; waiting for key
-188   C105 C2 66 C2    				jp nz,skipanim			
-189   C108             			
-190   C108 3E 00       			ld a,0
-191   C10A 32 84 CF    			ld (txy32.orflag),a
-192   C10D 3E 45       			ld a,69
-193   C10F 32 D1 CE    			ld (txy32.T32_ATT),a
-194   C112 01 57 2A    			ld	bc,#2A57
-195   C115 11 60 2A    			ld  de,#2A60
-196   C118 3E 4B       			ld a,#4B
-197   C11A CD 5A C1    			call wide1
-198   C11D CD 3E C5    				call iinkey.IINKEY		; waiting for key
-199   C120 C2 66 C2    				jp nz,skipanim			
-200   C123 06 01       			ld b,1
-201   C125 CD 05 C6    			call wait.wait
-202   C128 3E 44       			ld a,68
-203   C12A 32 D1 CE    			ld (txy32.T32_ATT),a
-204   C12D 01 2A 2A    			ld	bc,#2A2A
-205   C130 11 35 2A    			ld  de,#2A35
-206   C133 3E 1F       			ld a,#1F
-207   C135 CD 5A C1    			call wide1
-208   C138 CD 3E C5    				call iinkey.IINKEY		; waiting for key
-209   C13B C2 66 C2    				jp nz,skipanim			
-210   C13E             
-211   C13E 21 6F FB    			ld hl, STRIPS
-212   C141 01 00 48    			ld bc,#4800
-213   C144 ED 43 7E CF 			ld	(txy32.cursor),bc
-214   C148 E5          			push hl
-215   C149 CD B8 CE    			call txy32.txy
-216   C14C E1          			pop hl
-217   C14D 01 00 A8    			ld bc,#A800
-218   C150 ED 43 7E CF 			ld	(txy32.cursor),bc
-219   C154 CD B8 CE    			call txy32.txy
-220   C157             
-221   C157             //			call iinkey.ANYKEY	
-222   C157 C3 30 C2    			jp follow1
-223   C15A             			
-224   C15A F5          wide1		push af
-225   C15B D5          			push de
-226   C15C C5          			push bc
-227   C15D ED 43 7E CF 			ld	(txy32.cursor),bc
-228   C161 3E 84       			ld a,132
-229   C163 CD D2 CE    			call txy32.xy
-230   C166 C1          			pop bc
-231   C167 C5          			push bc
-232   C168 3E 08       			ld a,8
-233   C16A 80          			add a,b
-234   C16B 47          			ld b,a
-235   C16C 3E 86       			ld a,134
-236   C16E ED 43 7E CF 			ld	(txy32.cursor),bc
-237   C172 CD D2 CE    			call txy32.xy
-238   C175 C1          			pop bc
-239   C176 D1          			pop de
-240   C177 C5          			push bc
-241   C178 D5          			push de
-242   C179 ED 53 7E CF 			ld	(txy32.cursor),de
-243   C17D 3E 81       			ld a,129
-244   C17F CD D2 CE    			call txy32.xy
-245   C182 D1          			pop de
-246   C183 D5          			push de
-247   C184 3E 08       			ld a,8
-248   C186 82          			add a,d
-249   C187 57          			ld d,a
-250   C188 ED 53 7E CF 			ld	(txy32.cursor),de
-251   C18C 3E 83       			ld a,131
-252   C18E CD D2 CE    			call txy32.xy
-253   C191 06 04       			ld b,4
-254   C193 CD 05 C6    			call wait.wait
-255   C196 D1          			pop de
-256   C197 C1          			pop bc
-257   C198 F1          			pop af
-258   C199 1C          			inc e
-259   C19A 0D          			dec c
-260   C19B B9          			cp c
-261   C19C 20 BC       			jr nz,wide1
-262   C19E C9          			ret
-263   C19F             			
-264   C19F C5          fall1		push bc
-265   C1A0 CD 0D C2    			call singledot
-266   C1A3 06 01       			ld b,1
-267   C1A5 CD 05 C6    			call wait.wait
-268   C1A8 C1          			pop bc
-269   C1A9 04          			inc b
-270   C1AA 3E 2B       			ld a,#2B
-271   C1AC B8          			cp b
-272   C1AD 20 F0       			jr nz,fall1
-273   C1AF C9          			ret
-274   C1B0 C5          fall2		push bc
-275   C1B1 CD E3 C1    			call halfdot
-276   C1B4 06 01       			ld b,1
-277   C1B6 CD 05 C6    			call wait.wait
-278   C1B9 C1          			pop bc
-279   C1BA 04          			inc b
-280   C1BB 3E 2B       			ld a,#2B
-281   C1BD B8          			cp b
-282   C1BE 20 F0       			jr nz,fall2
-283   C1C0 C9          			ret			
-284   C1C1             	
-285   C1C1 C5          fall3		push bc
-286   C1C2 CD F1 C1    			call halfdot3
-287   C1C5 06 01       			ld b,1
-288   C1C7 CD 05 C6    			call wait.wait
-289   C1CA C1          			pop bc
-290   C1CB 04          			inc b
-291   C1CC 3E 2B       			ld a,#2B
-292   C1CE B8          			cp b
-293   C1CF 20 F0       			jr nz,fall3
-294   C1D1 C9          			ret	
-295   C1D2             
-296   C1D2 C5          fall4		push bc
-297   C1D3 CD FF C1    			call halfdot4
-298   C1D6 06 01       			ld b,1
-299   C1D8 CD 05 C6    			call wait.wait
-300   C1DB C1          			pop bc
-301   C1DC 04          			inc b
-302   C1DD 3E 2B       			ld a,#2B
-303   C1DF B8          			cp b
-304   C1E0 20 F0       			jr nz,fall4
-305   C1E2 C9          			ret				
-306   C1E3             	
-307   C1E3 ED 43 7E CF halfdot     ld	(txy32.cursor),bc
-308   C1E7 3E 84       			ld a,132
-309   C1E9 CD D2 CE    			call txy32.xy
-310   C1EC 3E 85       			ld a,133
-311   C1EE C3 D2 CE    			jp txy32.xy
-312   C1F1             
-313   C1F1 ED 43 7E CF halfdot3    ld	(txy32.cursor),bc
-314   C1F5 3E 88       			ld a,136
-315   C1F7 CD D2 CE    			call txy32.xy
-316   C1FA 3E 89       			ld a,137
-317   C1FC C3 D2 CE    			jp txy32.xy	
-318   C1FF             
-319   C1FF ED 43 7E CF halfdot4    ld	(txy32.cursor),bc
-320   C203 3E 8A       			ld a,138
-321   C205 CD D2 CE    			call txy32.xy
-322   C208 3E 8B       			ld a,139
-323   C20A C3 D2 CE    			jp txy32.xy	
-324   C20D             			
-325   C20D ED 43 7E CF singledot	ld	(txy32.cursor),bc
-326   C211 3E 84       			ld a,132
-327   C213 C5          			push bc
-328   C214 CD D2 CE    			call txy32.xy
-329   C217 3E 85       			ld a,133
-330   C219 CD D2 CE    			call txy32.xy
-331   C21C C1          			pop	bc
-332   C21D 3E 08       			ld a,8
-333   C21F 80          			add a,b
-334   C220 47          			ld b,a
-335   C221 ED 43 7E CF 			ld	(txy32.cursor),bc	
-336   C225 3E 86       			ld a,134
-337   C227 CD D2 CE    			call txy32.xy
-338   C22A 3E 87       			ld a,135
-339   C22C CD D2 CE    			call txy32.xy
-340   C22F C9          			ret
-341   C230             
-342   C230 11 0F 05    follow1		ld de,#050F
-343   C233 21 BB D7    	        ld hl,ultimatelogo
-344   C236 3E 0D       			ld a,13			// number of sprites in animations
-345   C238 F5          1			push af
-346   C239 D5          			push de
-347   C23A E5          			push hl
-348   C23B CD 95 CF    			call sprite2.OK
-349   C23E 06 0C       			ld b,12
-350   C240 CD 05 C6    			call wait.wait
-351   C243 E1          			pop hl
-352   C244 11 14 00    			ld de,20			// lenght of sprite2
-353   C247 19          			add hl,de
-354   C248 D1          			pop de
-355   C249 1C          			inc e
-356   C24A F1          			pop af
-357   C24B 3D          			dec a
-358   C24C 20 EA       			jr nz,1B
-359   C24E             //Ultimate		
-360   C24E 11 00 05    			ld de,#0500
-361   C251 21 BF D8    	        ld hl,dots+38*0
-362   C254 3E 06       			ld a,6			// number of sprites in animations
-363   C256 F5          2			push af
-364   C257 D5          			push de
-365   C258 E5          			push hl
-366   C259             //			call sprite2.OK
-367   C259 06 09       			ld b,9
-368   C25B CD 05 C6    			call wait.wait
-369   C25E E1          			pop hl
-370   C25F D1          			pop de
-371   C260 1C          			inc e
-372   C261 1C          			inc e
-373   C262 F1          			pop af
-374   C263 3D          			dec a
-375   C264 20 F0       			jr nz,2B
-376   C266             skipanim			
-377   C266 11 00 00    			ld de,#0000
-378   C269 21 D9 CF    	        ld hl,MB03pluslogo
-379   C26C CD 95 CF    			call sprite2.OK
-380   C26F             /*			ld de,#040A
-381   C26F~            	        ld hl,CaroLogo
-382   C26F~            			call sprite2.OK
-383   C26F             */
-384   C26F             ;carymary         
-385   C26F 01 00 48    			 ld bc,#4800
-386   C272 11 FF 48    			 ld de,#48ff
-387   C275 CD 4F C4    			 call draw_jugo.DRAW
-388   C278             
-389   C278 01 7A 3D    			ld	bc,#3D7A
-390   C27B ED 43 B2 C6 			ld	(txy51.cursor),bc
-391   C27F 21 D3 FA    			ld	hl,TEXT0
-392   C282 CD 0D C6    			call txy51.txy
-393   C285 01 00 B8    			ld	bc,#B800
-394   C288 ED 43 B2 C6 			ld	(txy51.cursor),bc
-395   C28C 21 EE FA    			ld	hl,TEXT3
-396   C28F CD 0D C6    			call txy51.txy
-397   C292 01 00 B0    			ld	bc,#B000
-398   C295 ED 43 B2 C6 			ld	(txy51.cursor),bc
-399   C299 21 40 FB    			ld	hl,TEXT2
-400   C29C CD 0D C6    			call txy51.txy
-401   C29F 01 B1 A6    			ld	bc,#A6B1
-402   C2A2 ED 43 B2 C6 			ld	(txy51.cursor),bc
-403   C2A6 21 4C FD    			ld	hl,FW1
-404   C2A9 CD 0D C6    			call txy51.txy
-405   C2AC 01 D9 A6    			ld	bc,#A6D9
-406   C2AF ED 43 B2 C6 			ld	(txy51.cursor),bc
-407   C2B3 21 56 FD    			ld	hl,DATE
-408   C2B6 CD 0D C6    			call txy51.txy		
-409   C2B9             
-410   C2B9 01 00 50    			ld	bc,#5000
-411   C2BC ED 43 B2 C6 			ld	(txy51.cursor),bc
-412   C2C0 21 E8 FB    			ld	hl,HW1
-413   C2C3 CD 0D C6    			call txy51.txy
-414   C2C6 01 03 58    			ld	bc,#5803
-415   C2C9 ED 43 B2 C6 			ld	(txy51.cursor),bc
-416   C2CD 21 F9 FB    			ld	hl,HW2
-417   C2D0 CD 0D C6    			call txy51.txy
-418   C2D3 01 03 60    			ld	bc,#6003
-419   C2D6 ED 43 B2 C6 			ld	(txy51.cursor),bc
-420   C2DA 21 24 FC    			ld	hl,HW3
-421   C2DD CD 0D C6    			call txy51.txy
-422   C2E0 01 03 68    			ld	bc,#6803
-423   C2E3 ED 43 B2 C6 			ld	(txy51.cursor),bc
-424   C2E7 21 39 FC    			ld	hl,HW4
-425   C2EA CD 0D C6    			call txy51.txy
-426   C2ED 01 03 70    			ld	bc,#7003
-427   C2F0 ED 43 B2 C6 			ld	(txy51.cursor),bc
-428   C2F4 21 69 FC    			ld	hl,HW5
-429   C2F7 CD 0D C6    			call txy51.txy
-430   C2FA 01 03 78    			ld	bc,#7803
-431   C2FD ED 43 B2 C6 			ld	(txy51.cursor),bc
-432   C301 21 8E FC    			ld	hl,HW6
-433   C304 CD 0D C6    			call txy51.txy
-434   C307             
-435   C307 01 00 80    			ld	bc,#8000
-436   C30A ED 43 B2 C6 			ld	(txy51.cursor),bc
-437   C30E 21 BC FC    			ld	hl,CONF1
-438   C311 CD 0D C6    			call txy51.txy
-439   C314 01 03 88    			ld	bc,#8803
-440   C317 ED 43 B2 C6 			ld	(txy51.cursor),bc
-441   C31B 21 D2 FC    			ld	hl,CONF2
-442   C31E CD 0D C6    			call txy51.txy
-443   C321 01 03 90    			ld	bc,#9003
-444   C324 ED 43 B2 C6 			ld	(txy51.cursor),bc
-445   C328 21 0D FD    			ld	hl,CONF3
-446   C32B             //carymary2
-447   C32B CD 0D C6    			call txy51.txy		
-448   C32E 01 00 AE    			 ld bc,#AE00
-449   C331 11 FF AE    			 ld de,#AEff
-450   C334 CD 4F C4    			 call draw_jugo.DRAW
-451   C337             			
-452   C337             /*			ld	bc,#9000
-453   C337~            			ld	(txy51.cursor),bc
-454   C337~            			ld	hl,TEXTTEST2
-455   C337~            			call txy51.txy			
-456   C337             */			
-457   C337 CD 3E C5    1			call iinkey.IINKEY		; waiting for key
-458   C33A 28 FB       			jr z,1B
-459   C33C FE 11       			cp 11h					; break
-460   C33E 20 0E       			jr nz,2F				; no break
-461   C340 AF          			xor a					; break
-462   C341 D3 17       			out (23),a 				; dissable MB03+ SRAM
-463   C343             									;ZX128+2A rom
-464   C343 01 FD 1F    			ld bc,8189
-465   C346 ED 79       			out (c),a
-466   C348             			
-467   C348 01 FD 7F    			ld bc,32765				; ZX128 rom0 
-468   C34B ED 79       			out (c),a
-469   C34D C7          			rst 0					; jp to 0
-470   C34E             2			
-471   C34E FE 31       			cp '1'					//key 1
-472   C350 20 42       			jr nz,3F
-473   C352 3E 81       			ld a,129				; install bsrom from "rom"
-474   C354 D3 17       			out (23),a
-475   C356 21 00 00    			ld hl,0
-476   C359 11 00 80    			ld de,32768
-477   C35C 01 00 40    			ld bc,16384
-478   C35F ED B0       			ldir
-479   C361 3E 60       			ld a,96
-480   C363 D3 17       			out (23), a
-481   C365 21 00 80    			ld hl,32768
-482   C368 11 00 00    			ld de,0
-483   C36B 01 00 40    			ld bc,16384
-484   C36E ED B0       			ldir
-485   C370 3E 82       			ld a,130				; install bsrom from "rom"
-486   C372 D3 17       			out (23),a
-487   C374 21 00 00    			ld hl,0
-488   C377 11 00 80    			ld de,32768
-489   C37A 01 00 40    			ld bc,16384
-490   C37D ED B0       			ldir
-491   C37F 3E 61       			ld a,97
-492   C381 D3 17       			out (23), a
-493   C383 21 00 80    			ld hl,32768
-494   C386 11 00 00    			ld de,0
-495   C389 01 00 40    			ld bc,16384
-496   C38C ED B0       			ldir
-497   C38E 3E 40       			ld a,64
-498   C390 D3 17       			out (23),a
-499   C392 18 04       			jr 4F
-500   C394             3			
-501   C394 FE 32       			cp '2'					; key 2
-502   C396 20 10       			jr nz, 5F				
-503   C398             			
-504   C398 21 BF D8    4			ld hl,easyhdd			; run EasyHDD
-505   C39B 11 00 80    			ld de,32768
-506   C39E 01 14 22    			ld bc,easyhddend-easyhdd
-507   C3A1 ED B0       			ldir					
-508   C3A3 CD 00 80    			call 32768
-509   C3A6 18 04       			jr 6F
-510   C3A8             
-511   C3A8 FE 65       5			cp 'e'					// key e
-512   C3AA 20 07       			jr nz, 7F				// no key
-513   C3AC             			
-514   C3AC 3E 40       6			ld a,64					// 128K reset in BSROM140
-515   C3AE D3 17       			out (23),a
-516   C3B0 C3 06 39    			jp #3906				//jp to bsrom140
-517   C3B3             			
-518   C3B3 FE 64       7			cp 'd'
-519   C3B5 20 16       			jr nz, 8F				
-520   C3B7             			
-521   C3B7 3E 83       			ld a,131
-522   C3B9 D3 17       			out (23),a
-523   C3BB 21 00 00    			ld hl,0
-524   C3BE 11 78 69    			ld de,27000
-525   C3C1 01 70 17    			ld bc,6000
-526   C3C4 ED B0       			ldir
-527   C3C6 3E 40       			ld a,64
-528   C3C8 D3 17       			out (23),a
-529   C3CA C3 78 69    			jp 27000
-530   C3CD             			
-531   C3CD FE 74       8			cp 't'					// key t - zx diagnostics
-532   C3CF 20 05       			jr nz, 9F				// no key
-533   C3D1 3E 84       			ld a,132
-534   C3D3 D3 17       			out (23),a
-535   C3D5 C7          			rst 0
-536   C3D6 FE 70       9			cp 'p'					// key p - Papaya DOS- ESXDOS DivMMC
-537   C3D8 20 35       			jr nz, 10F				
-538   C3DA AF          			xor a
-539   C3DB D3 17       			out (23),a
-540   C3DD 01 3B 20    			ld bc,#203B				//ZXi portselect
-541   C3E0 ED 79       			out (c),a
-542   C3E2 01 3B 21    			ld bc,#213B
-543   C3E5 3E 02       			ld a,2					//HW - 2 - DIVMMC/DIVIDE
-544   C3E7 ED 79       			out (c),a
-545   C3E9 01 3B 20    			ld bc,#203B				//ZXi portselect 
-546   C3EC 3E 02       			ld a,2
-547   C3EE ED 79       			out (c),a
-548   C3F0 01 3B 21    			ld bc,#213B
-549   C3F3 AF          			xor a					//IDE - 0 dissable
-550   C3F4 ED 79       			out (c),a
-551   C3F6 3E 80       			ld a,128
-552   C3F8 D3 E3       div_erase	out (#E3),a
-553   C3FA 21 00 20    			ld hl,8192
-554   C3FD 11 01 20    			ld de,8193
-555   C400 01 FF 1F    			ld bc,8191
-556   C403 75          			ld (hl),l
-557   C404 ED B0       			ldir
-558   C406 3C          			inc a
-559   C407 FE 85       			cp 128+5
-560   C409 20 ED       			jr nz,div_erase			//delete first 32KB od DivIde RAM
-561   C40B AF          			xor a					//is enought to erase bank0 or
-562   C40C D3 E3       			out (#E3),a				//to force cold start zero $2dXX in page 0
-563   C40E C7          			rst 0
-564   C40F FE 52       10			cp "R"					//restart firmware
-565   C411 20 01       			jr nz, 11F
-566   C413 C7          			rst 0
-567   C414 FE 6C       11			cp "l"					//DivIDE
-568   C416 C2 37 C3    			jp nz, 1B
-569   C419 AF          			xor a
-570   C41A D3 17       			out (23),a
-571   C41C 01 3B 20    			ld bc,#203B				//ZXi portselect
-572   C41F ED 79       			out (c),a
-573   C421 01 3B 21    			ld bc,#213B
-574   C424 3E 02       			ld a,2					//HW - 2 - DIVMMC/DIVIDE
-575   C426 ED 79       			out (c),a
-576   C428 01 3B 20    			ld bc,#203B				//ZXi portselect 
-577   C42B 3E 02       			ld a,2
-578   C42D ED 79       			out (c),a
-579   C42F 01 3B 21    			ld bc,#213B
-580   C432 3E 02       			ld a,2					//IDE - 2 PVL ports- DIVMMC/DIVIDE
-581   C434 ED 79       			out (c),a
-582   C436 3E 80       			ld a,128
-583   C438 D3 E3       div_erase2	out (#E3),a
-584   C43A 21 00 20    			ld hl,8192
-585   C43D 11 01 20    			ld de,8193
-586   C440 01 FF 1F    			ld bc,8191
-587   C443 75          			ld (hl),l
-588   C444 ED B0       			ldir
-589   C446 3C          			inc a
-590   C447 FE 85       			cp 128+5
-591   C449 20 ED       			jr nz,div_erase2			//delete first 32KB od DivIde RAM
-592   C44B AF          			xor a					//is enought to erase bank0 or
-593   C44C D3 E3       			out (#E3),a				//to force cold start zero $2dXX in page 0
-594   C44E C7          			rst 0
-595   C44F             			
-596   C44F             ; --------------- L I B R A R I E S ---------------------------------------	
-597   C44F             	
-598   C44F             //INCLUDE "nasobeniHLDE.a80"
-599   C44F             	INCLUDE "draw-jugo.a80"
-001+  C44F             ;rutina na kresleni cary. pochazi z nejakeho jugoslavskeho casaku
-002+  C44F             ;BC-ODKUD DE-KAM NAKRESLI CARU
-003+  C44F             ;POCATEK VLEVO NAHORE (0,0)
-004+  C44F             	module draw_jugo
-005+  C44F 7A          DRAW     LD   A,D
-006+  C450 FE C0                CP   192
-007+  C452 D0                   RET  NC
-008+  C453 78                   LD   A,B
-009+  C454 FE C0                CP   192
-010+  C456 D0                   RET  NC
-011+  C457 3F                   CCF
-012+  C458 1F                   RRA
-013+  C459 37                   SCF
-014+  C45A 1F                   RRA
-015+  C45B A7                   AND  A
-016+  C45C 1F                   RRA
-017+  C45D A8                   XOR  B
-018+  C45E E6 F8                AND  248
-019+  C460 A8                   XOR  B
-020+  C461 67                   LD   H,A
-021+  C462 79                   LD   A,C
-022+  C463 07                   RLCA
-023+  C464 07                   RLCA
-024+  C465 07                   RLCA
-025+  C466 6F                   LD   L,A
-026+  C467 E6 38                AND  56
-027+  C469 2F                   CPL
-028+  C46A 32 6F C4             LD   (LAB+1),A
-029+  C46D AF                   XOR  A
-030+  C46E CB C7       LAB      SET  0,A
-031+  C470 08                   EX   AF,AF'
-032+  C471 7D                   LD   A,L
-033+  C472 A8                   XOR  B
-034+  C473 E6 C7                AND  199
-035+  C475 A8                   XOR  B
-036+  C476 07                   RLCA
-037+  C477 07                   RLCA
-038+  C478 6F                   LD   L,A
-039+  C479 78                   LD   A,B
-040+  C47A 92                   SUB  D
-041+  C47B 06 00                LD   B,0
-042+  C47D 30 03                JR   NC,N1
-043+  C47F ED 44                NEG
-044+  C481 04                   INC  B
-045+  C482 57          N1       LD   D,A
-046+  C483 79                   LD   A,C
-047+  C484 93                   SUB  E
-048+  C485 0E 00                LD   C,0
-049+  C487 30 03                JR   NC,N2
-050+  C489 ED 44                NEG
-051+  C48B 0C                   INC  C
-052+  C48C 5F          N2       LD   E,A
-053+  C48D 08                   EX   AF,AF'
-054+  C48E F5                   PUSH AF
-055+  C48F B6                   OR   (HL)
-056+  C490 77                   LD   (HL),A
-057+  C491 F1                   POP  AF
-058+  C492 08                   EX   AF,AF'
-059+  C493 B2                   OR   D
-060+  C494 C8                   RET  Z
-061+  C495 E5                   PUSH HL
-062+  C496 7A                   LD   A,D
-063+  C497 BB                   CP   E
-064+  C498 38 37                JR   C,POX
-065+  C49A 21 F5 C4             LD   HL,LEVO
-066+  C49D CB 41                BIT  0,C
-067+  C49F 28 03                JR   Z,Y1
-068+  C4A1 21 F0 C4             LD   HL,DESNO
-069+  C4A4 22 C4 C4    Y1       LD   (DIA+1),HL
-070+  C4A7 21 0D C5             LD   HL,GORE
-071+  C4AA CB 40                BIT  0,B
-072+  C4AC 28 03                JR   Z,Y2
-073+  C4AE 21 FA C4             LD   HL,DOLE
-074+  C4B1 22 C7 C4    Y2       LD   (NAST+1),HL
-075+  C4B4 4A                   LD   C,D
-076+  C4B5 CB 39       N3       SRL  C
-077+  C4B7 DD 62                LD   HX,D
-078+  C4B9 08                   EX   AF,AF'
-079+  C4BA 47                   LD   B,A
-080+  C4BB E1                   POP  HL
-081+  C4BC 79          LOOP     LD   A,C
-082+  C4BD 93                   SUB  E
-083+  C4BE 4F                   LD   C,A
-084+  C4BF 30 05                JR   NC,NAST
-085+  C4C1 82                   ADD  A,D
-086+  C4C2 4F                   LD   C,A
-087+  C4C3 CD 00 00    DIA      CALL 0
-088+  C4C6 CD 00 00    NAST     CALL 0
-089+  C4C9 78                   LD   A,B
-090+  C4CA B6                   OR   (HL)
-091+  C4CB 77                   LD   (HL),A
-092+  C4CC DD 25                DEC  HX
-093+  C4CE 20 EC                JR   NZ,LOOP
-094+  C4D0 C9                   RET
-095+  C4D1 21 F5 C4    POX      LD   HL,LEVO
-096+  C4D4 CB 41                BIT  0,C
-097+  C4D6 28 03                JR   Z,X1
-098+  C4D8 21 F0 C4             LD   HL,DESNO
-099+  C4DB 22 C7 C4    X1       LD   (NAST+1),HL
-100+  C4DE 21 0D C5             LD   HL,GORE
-101+  C4E1 CB 40                BIT  0,B
-102+  C4E3 28 03                JR   Z,X2
-103+  C4E5 21 FA C4             LD   HL,DOLE
-104+  C4E8 22 C4 C4    X2       LD   (DIA+1),HL
-105+  C4EB 4B                   LD   C,E
-106+  C4EC 5A                   LD   E,D
-107+  C4ED 51                   LD   D,C
-108+  C4EE 18 C5                JR   N3
-109+  C4F0 CB 08       DESNO    RRC  B
-110+  C4F2 D0                   RET  NC
-111+  C4F3 23                   INC  HL
-112+  C4F4 C9                   RET
-113+  C4F5 CB 00       LEVO     RLC  B
-114+  C4F7 D0                   RET  NC
-115+  C4F8 2B                   DEC  HL
-116+  C4F9 C9                   RET
-117+  C4FA 24          DOLE     INC  H
-118+  C4FB 7C                   LD   A,H
-119+  C4FC E6 07                AND  7
-120+  C4FE C0                   RET  NZ
-121+  C4FF 7C                   LD   A,H
-122+  C500 D6 08                SUB  8
-123+  C502 67                   LD   H,A
-124+  C503 7D                   LD   A,L
-125+  C504 C6 20                ADD  A,32
-126+  C506 6F                   LD   L,A
-127+  C507 D0                   RET  NC
-128+  C508 7C                   LD   A,H
-129+  C509 C6 08                ADD  A,8
-130+  C50B 67                   LD   H,A
-131+  C50C C9                   RET
-132+  C50D 25          GORE     DEC  H
-133+  C50E 7C                   LD   A,H
-134+  C50F 2F                   CPL
-135+  C510 E6 07                AND  7
-136+  C512 C0                   RET  NZ
-137+  C513 7C                   LD   A,H
-138+  C514 C6 08                ADD  A,8
-139+  C516 67                   LD   H,A
-140+  C517 7D                   LD   A,L
-141+  C518 D6 20                SUB  32
-142+  C51A 6F                   LD   L,A
-143+  C51B D0                   RET  NC
-144+  C51C 7C                   LD   A,H
-145+  C51D D6 08                SUB  8
-146+  C51F 67                   LD   H,A
-147+  C520 C9                   RET
-148+  C521             	endmodule
-149+  C521             
-600   C521             	INCLUDE "cls.a80"
-001+  C521             	module cls
-002+  C521             CLS     
-003+  C521 AF                  xor  a
-004+  C522 D3 FE               out  (254),a
-005+  C524 21 FF 5A    		ld	hl, 5AFFh
-006+  C527 11 FE 5A    		ld	de, 5AFEh
-007+  C52A 01 FF 1A    		ld	bc, 1AFFh
-008+  C52D 77          		ld	(hl), a
-009+  C52E ED B8       		lddr			; Clear	videoram (black	screen)
-010+  C530 C9          		ret
-011+  C531                     
-012+  C531             	endmodule
-601   C531             	INCLUDE "iinkey.a80"
-001+  C531             	module iinkey
-002+  C531 CD 3E C5    ANYKEY   call IINKEY
-003+  C534 28 FB                jr   z,ANYKEY
-004+  C536 F5                   push af
-005+  C537 CD 3E C5    ANYKEY_0 call IINKEY
-006+  C53A 20 FB                jr   nz,ANYKEY_0
-007+  C53C F1                   pop  af
-008+  C53D C9                   ret
-009+  C53E             ;------------------------------
-010+  C53E E5          IINKEY   push hl
-011+  C53F D5                   push de
-012+  C540 C5                   push bc
-013+  C541 01 FE 7F             ld   bc,#7FFE
-014+  C544 26 00                ld   h,0
-015+  C546 54                   ld   d,h
-016+  C547 5C                   ld   e,h
-017+  C548 2E 05       II1      ld   l,5
-018+  C54A ED 78                in   a,(c)
-019+  C54C 24          II2      inc  h
-020+  C54D 0F                   rrca
-021+  C54E 38 02                jr   c,II3
-022+  C550 53                   ld   d,e
-023+  C551 5C                   ld   e,h
-024+  C552 2D          II3      dec  l
-025+  C553 20 F7                jr   nz,II2
-026+  C555 CB 08                rrc  b
-027+  C557 38 EF                jr   c,II1
-028+  C559 7B                   ld   a,e
-029+  C55A FE 24                cp   #24
-030+  C55C 20 03                jr   nz,II5
-031+  C55E 5A                   ld   e,d
-032+  C55F 16 24                ld   d,#24
-033+  C561 FE 02       II5      cp   2
-034+  C563 20 03                jr   nz,II6
-035+  C565 5A                   ld   e,d
-036+  C566 16 02                ld   d,2
-037+  C568 21 8A C5    II6      ld   hl,IINN
-038+  C56B AF                   xor  a
-039+  C56C AA                   xor  d
-040+  C56D 28 12                jr   z,II7
-041+  C56F 21 DC C5             ld   hl,IISS
-042+  C572 FE 02                cp   2
-043+  C574 28 0B                jr   z,II7
-044+  C576 21 B3 C5             ld   hl,IICS
-045+  C579 FE 24                cp   #24
-046+  C57B 28 04                jr   z,II7
-047+  C57D 3E 01                ld   a,1
-048+  C57F 18 04                jr   II8
-049+  C581             
-050+  C581 16 00       II7      ld   d,0
-051+  C583 19                   add  hl,de
-052+  C584 7E                   ld   a,(hl)
-053+  C585 A7          II8      and  a
-054+  C586 C1                   pop  bc
-055+  C587 D1                   pop  de
-056+  C588 E1                   pop  hl
-057+  C589 C9                   ret
-058+  C58A             
-059+  C58A 00 20 1C    IINN     defb 0," ",#1C
-060+  C58D 6D 6E 62             defb "mnb"
-061+  C590 0D                   defb 13
-062+  C591 6C 6B 6A 68          defb "lkjh"
-063+  C595 706F697579           defb "poiuy"
-064+  C59A 3039383736           defb "09876"
-065+  C59F 3132333435           defb "12345"
-066+  C5A4 7177657274           defb "qwert"
-067+  C5A9 6173646667           defb "asdfg"
-068+  C5AE 00                   defb 0
-069+  C5AF 7A 78 63 76          defb "zxcv"
-070+  C5B3             
-071+  C5B3 00 11 0E    IICS     defb 0,#11,#0E
-072+  C5B6 4D 4E 42             defb "MNB"
-073+  C5B9 02                   defb 2
-074+  C5BA 4C 4B 4A 48          defb "LKJH"
-075+  C5BE 504F495559           defb "POIUY"
-076+  C5C3 0C0F090B0A           defb #0C,#0F,9,#0B,#0A
-077+  C5C8 0706040508           defb 7,6,4,5,8
-078+  C5CD 5157455254           defb "QWERT"
-079+  C5D2 4153444647           defb "ASDFG"
-080+  C5D7 1F                   defb #1F
-081+  C5D8 5A 58 43 56          defb "ZXCV"
-082+  C5DC             
-083+  C5DC 00 10 1E    IISS     defb 0,16,#1E
-084+  C5DF 2E 2C 2A             defb ".,*"
-085+  C5E2 03                   defb 3
-086+  C5E3 3D 2B 2D 5E          defb "=+-^"
-087+  C5E7 22                   defb 34 ;"
-088+  C5E8 3B 7F 7D 7B          defb ";}{"
-089+  C5EC 5F29282726           defb "_)('&"
-090+  C5F1 2140232425           defb "!@#$%"
-091+  C5F6 12 13 14             defb #12,#13,#14
-092+  C5F9 3C 3E                defb "<>"
-093+  C5FB 7E 7C                defb "~|"
-094+  C5FD 5C                   defb 92 ;\
-095+  C5FE 7B                   defb 123 ;{
-096+  C5FF 7D                   defb 125 ;}
-097+  C600 1D                   defb #1D
-098+  C601 3A 60 3F 2F          defb ":`?/"
-099+  C605             
-100+  C605             	endmodule
-602   C605             	INCLUDE "wait.a80"
-001+  C605             	module wait
-002+  C605             wait
-003+  C605             //	ex (SP),IX
-004+  C605             //	ex (SP),IX
-005+  C605 2B          	dec hl
-006+  C606 7C          	ld a,h
-007+  C607 BD          	cp l
-008+  C608 20 FB       	jr nz,wait
-009+  C60A 10 F9       	djnz wait
-010+  C60C C9          	ret
-011+  C60D             
-012+  C60D             	endmodule
-603   C60D             //	INCLUDE "t42.a80"
-604   C60D             //	INCLUDE "txy.a80"
-605   C60D             	INCLUDE "txy51.a80"
-001+  C60D             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-002+  C60D             ; Poziciovy print 42*27 znakov ;
-003+  C60D             ;  + znakovy subor 6*7 bodov   ;
-004+  C60D             ; (vytvoreny pre disasembler)  ;
-005+  C60D             ; . -28.05.1988- Busy software ;
-006+  C60D             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-007+  C60D             ;DEMO:napiste:asm,dbg,rpp,g
-008+  C60D             //Original by BusySoft
-009+  C60D             	MODULE txy51
-010+  C60D 7E          txy	 	 ld   a,(hl)
-011+  C60E E6 7F                and  127
-012+  C610             /*         cp   13
-013+  C610                      jr   z,T42_ZMEN */
-014+  C610 FE 10                cp   16
-015+  C612 28 0B                jr	  z,colorchange
-016+  C614 E5                   push hl
-017+  C615 CD 27 C6             call xy
-018+  C618 E1                   pop  hl
-019+  C619             /*         ld   a,(T42_BORE)
-020+  C619~                     dec  a
-021+  C619~                     cp   c
-022+  C619~                     jr   c,T42_ZMEN
-023+  C619                      inc  c */
-024+  C619 7E          T42_BACK ld   a,(hl)
-025+  C61A 17                   rla
-026+  C61B D8                   ret  c
-027+  C61C 23                   inc  hl
-028+  C61D 18 EE                jr   txy
-029+  C61F             
-030+  C61F             colorchange
-031+  C61F 23          			inc hl
-032+  C620 7E          			ld a,(hl)
-033+  C621 32 26 C6    			ld (T42_ATT),a
-034+  C624 18 F3       			jr T42_BACK	
-035+  C626 00          T42_ATT		defb 0	
-036+  C627             
-037+  C627             //exampleBusy
-038+  C627             /*
-039+  C627~            start	ld	hl,#4000
-040+  C627~            	ld	de,#4001
-041+  C627~            	ld	bc,#17ff
-042+  C627~            	ld	(hl),#00
-043+  C627~            	ldir
-044+  C627~            	ld	hl,#0202
-045+  C627~            	ld	(cursor),hl
-046+  C627~            	ld	hl,text
-047+  C627~            aaa	ld	a,(hl)
-048+  C627~            	call	xy
-049+  C627~            	inc	hl
-050+  C627~            	jr	nz,aaa
-051+  C627~            	ld	a,' '
-052+  C627~            bbb	ld	b,a
-053+  C627~            	call	xy
-054+  C627~            	ld	a,b
-055+  C627~            	inc	a
-056+  C627~            	cp	#80
-057+  C627~            	jr	c,bbb
-058+  C627~            	ld	hl,#2758
-059+  C627~            	exx
-060+  C627~            	ret
-061+  C627~            
-062+  C627~            text	db	'*** Rutina print'
-063+  C627~            		db	' 42*27 znakov v '
-064+  C627~            		db	'obraze ***'
-065+  C627~            		db	'        Priklad '
-066+  C627~            		db	'vypisu:         '
-067+  C627~            		db	'          '
-068+  C627~            		db	#00
-069+  C627             		*/
-070+  C627             ;main code
-071+  C627 A7          xy	and	a
-072+  C628 C8          	ret	z
-073+  C629 D9          	exx
-074+  C62A ED 4B B2 C6 	ld	bc,(cursor)
-075+  C62E 11 B8 C6    xy8	ld	de,znaky
-076+  C631 26 00       	ld	h,#00
-077+  C633 6F          	ld	l,a
-078+  C634 29          	add	hl,hl
-079+  C635 29          	add	hl,hl
-080+  C636 29          	add	hl,hl
-081+  C637 19          	add	hl,de
-082+  C638 E5          	push	hl
-083+  C639 FD E1       	pop	iy
-084+  C63B DD 26 08    	ld	xh,#08
-085+  C63E 78          xy8dd	ld	a,b
-086+  C63F FE C0       	cp	#c0
-087+  C641 30 38       	jr	nc,xyend
-088+  C643             ;	call	#22b1
-089+  C643             
-090+  C643 A7          	and a
-091+  C644 1F          	rra
-092+  C645 37          	scf
-093+  C646 1F          	rra
-094+  C647 A7          	and a
-095+  C648 1F          	rra
-096+  C649 A8          	xor b
-097+  C64A E6 F8       	and 248
-098+  C64C A8          	xor b
-099+  C64D 67          	ld h,a
-100+  C64E 79          	ld a,c
-101+  C64F 07          	rlca
-102+  C650 07          	rlca
-103+  C651 07          	rlca
-104+  C652 A8          	xor b
-105+  C653 E6 C7       	and 199
-106+  C655 A8          	xor b
-107+  C656 07          	rlca
-108+  C657 07          	rlca
-109+  C658 6F          	ld l,a
-110+  C659 79          	ld a,c
-111+  C65A E6 07       	and 07
-112+  C65C             
-113+  C65C FD 56 00    	ld	d,(iy+#00)
-114+  C65F 1E 00       	ld	e,#00
-115+  C661 28 07       	jr	z,xy8bb
-116+  C663 CB 1A       xy8cc	rr	d
-117+  C665 CB 1B       	rr	e
-118+  C667 3D          	dec	a
-119+  C668 20 F9       	jr	nz,xy8cc
-120+  C66A 7A          xy8bb	ld	a,d
-121+  C66B B6          	or	(hl)
-122+  C66C 77          	ld	(hl),a
-123+  C66D 23          	inc	hl
-124+  C66E 7B          	ld	a,e
-125+  C66F B6          	or	(hl)
-126+  C670 77          	ld	(hl),a
-127+  C671 04          	inc	b
-128+  C672 FD 23       	inc	iy
-129+  C674 DD 25       	dec	xh
-130+  C676 20 C6       	jr	nz,xy8dd
-131+  C678 CD 99 C6    	call T51_COLOR
-132+  C67B DD 21 AE C6 xyend	ld	ix,flag0
-133+  C67F DD 7E 04    	ld	a,(ix+#04)
-134+  C682 C6 05       	add	a,5
-135+  C684 DD 77 04    	ld	(ix+#04),a
-136+  C687 FE FD       	cp	255-2
-137+  C689 38 0C       	jr	c,xystop
-138+  C68B DD 36 04 02 	ld	(ix+#04),2
-139+  C68F DD 7E 05    	ld	a,(ix+#05)
-140+  C692 C6 07       	add	a,7
-141+  C694 DD 77 05    	ld	(ix+#05),a
-142+  C697 D9          xystop	exx
-143+  C698 C9          	ret
-144+  C699             
-145+  C699             T51_COLOR
-146+  C699 3A 26 C6    				ld a,(T42_ATT)
-147+  C69C B7          				or a
-148+  C69D C8          				ret z
-149+  C69E             ; pokud je nula, tak se neobarvuje
-150+  C69E 25          				dec h
-151+  C69F 2D          				dec l
-152+  C6A0             
-153+  C6A0 7C          				ld a,h
-154+  C6A1 0F          				rrca
-155+  C6A2 0F          				rrca
-156+  C6A3 0F          				rrca
-157+  C6A4 E6 03       				and 3
-158+  C6A6 F6 58       				or 88
-159+  C6A8 67          				ld h,a
-160+  C6A9 3A 26 C6    				ld a,(T42_ATT)
-161+  C6AC 77          				ld (hl),a
-162+  C6AD C9          				ret
-163+  C6AE             ;systemove premenne:(pre disu)
-164+  C6AE             
-165+  C6AE 00          flag0	db	#00
-166+  C6AF 00          flag1	db	#00
-167+  C6B0 00          flag2	db	#00
-168+  C6B1 00          inp	db	#00
-169+  C6B2             
-170+  C6B2             cursor
-171+  C6B2 00          xxx	db	#00
-172+  C6B3 00          yyy	db	#00
-173+  C6B4 00 00       leni	dw	0
-174+  C6B6 00 00       adr	dw	0
-175+  C6B8             
-176+  C6B8             znaky
-177+  C6B8              INCBIN zx51.ch6
-178+  CEB8             
-179+  CEB8             	ENDMODULE
-606   CEB8             	INCLUDE "txy32.a80"
-001+  CEB8             //LMN128-Jan Kucera-Zlin/CZ
-002+  CEB8             //added OR Flag
-003+  CEB8             //Original by BusySoft
-004+  CEB8             	MODULE txy32
-005+  CEB8 7E          txy	 	 ld   a,(hl)
-006+  CEB9 E6 7F                and  127
-007+  CEBB             /*         cp   13
-008+  CEBB                      jr   z,T42_ZMEN */
-009+  CEBB FE 10                cp   16
-010+  CEBD 28 0B                jr	  z,colorchange
-011+  CEBF E5                   push hl
-012+  CEC0 CD D2 CE             call xy
-013+  CEC3 E1                   pop  hl
-014+  CEC4             /*         ld   a,(T42_BORE)
-015+  CEC4~                     dec  a
-016+  CEC4~                     cp   c
-017+  CEC4~                     jr   c,T42_ZMEN
-018+  CEC4                      inc  c */
-019+  CEC4 7E          T32_BACK ld   a,(hl)
-020+  CEC5 17                   rla
-021+  CEC6 D8                   ret  c
-022+  CEC7 23                   inc  hl
-023+  CEC8 18 EE                jr   txy
-024+  CECA             
-025+  CECA             colorchange
-026+  CECA 23          			inc hl
-027+  CECB 7E          			ld a,(hl)
-028+  CECC 32 D1 CE    			ld (T32_ATT),a
-029+  CECF 18 F3       			jr T32_BACK	
-030+  CED1 00          T32_ATT		defb 0	
-031+  CED2             
-032+  CED2 A7          xy	and	a
-033+  CED3 C8          	ret	z
-034+  CED4 D9          	exx
-035+  CED5 ED 4B 7E CF 	ld	bc,(cursor)
-036+  CED9 11 B8 C6    xy8	ld	de,boot.txy51.znaky
-037+  CEDC 26 00       	ld	h,#00
-038+  CEDE 6F          	ld	l,a
-039+  CEDF 29          	add	hl,hl
-040+  CEE0 29          	add	hl,hl
-041+  CEE1 29          	add	hl,hl
-042+  CEE2 19          	add	hl,de
-043+  CEE3 E5          	push hl
-044+  CEE4 FD E1       	pop	iy
-045+  CEE6 DD 26 08    	ld	xh,#08
-046+  CEE9 78          xy8dd	ld	a,b
-047+  CEEA FE C0       	cp	#c0
-048+  CEEC 30 48       	jr	nc,xyend
-049+  CEEE             ;	call	#22b1
-050+  CEEE             
-051+  CEEE A7          	and a
-052+  CEEF 1F          	rra
-053+  CEF0 37          	scf
-054+  CEF1 1F          	rra
-055+  CEF2 A7          	and a
-056+  CEF3 1F          	rra
-057+  CEF4 A8          	xor b
-058+  CEF5 E6 F8       	and 248
-059+  CEF7 A8          	xor b
-060+  CEF8 67          	ld h,a
-061+  CEF9 79          	ld a,c
-062+  CEFA 07          	rlca
-063+  CEFB 07          	rlca
-064+  CEFC 07          	rlca
-065+  CEFD A8          	xor b
-066+  CEFE E6 C7       	and 199
-067+  CF00 A8          	xor b
-068+  CF01 07          	rlca
-069+  CF02 07          	rlca
-070+  CF03 6F          	ld l,a
-071+  CF04 79          	ld a,c
-072+  CF05 E6 07       	and 07
-073+  CF07             
-074+  CF07 FD 56 00    	ld	d,(iy+#00)
-075+  CF0A             //	ld	e,#00
-076+  CF0A 28 48       	jr	z,xy8bbnew 		//kulata pozice, staci vypsat jen jeden atribut
-077+  CF0C 1E 00       	ld e,0
-078+  CF0E CB 1A       xy8cc rr	d
-079+  CF10 CB 1B       	rr	e
-080+  CF12 3D          	dec	a
-081+  CF13 20 F9       	jr	nz,xy8cc   
-082+  CF15             xy8bb
-083+  CF15 3A 84 CF    	ld a,(orflag)
-084+  CF18 A7          	and a
-085+  CF19 7A          	ld a,d
-086+  CF1A 20 01       	jr nz,1F
-087+  CF1C B6          	or	(hl)
-088+  CF1D 77          1	ld	(hl),a
-089+  CF1E CD 63 CF        call T32_COLOR
-090+  CF21 23          	inc	hl
-091+  CF22 3A 84 CF    	ld a,(orflag)
-092+  CF25 A7          	and a
-093+  CF26 7B          	ld a,e
-094+  CF27 20 01       	jr nz,2F
-095+  CF29 B6          	or	(hl)				
-096+  CF2A 77          2	ld	(hl),a
-097+  CF2B CD 63 CF        call T32_COLOR
-098+  CF2E 04          3	inc	b
-099+  CF2F FD 23       	inc	iy
-100+  CF31 DD 25       	dec	xh
-101+  CF33             //    call T32_COLOR
-102+  CF33 C2 E9 CE    	jp	nz,xy8dd
-103+  CF36             //	call T32_COLOR
-104+  CF36 DD 21 7A CF xyend	ld	ix,flag0
-105+  CF3A DD 7E 04    	ld	a,(ix+#04)
-106+  CF3D C6 08       	add	a,8
-107+  CF3F DD 77 04    	ld	(ix+#04),a
-108+  CF42 FE F8       	cp	255-7
-109+  CF44 38 0C       	jr	c,xystop
-110+  CF46 DD 36 04 02 	ld	(ix+#04),2
-111+  CF4A DD 7E 05    	ld	a,(ix+#05)
-112+  CF4D C6 08       	add	a,8
-113+  CF4F DD 77 05    	ld	(ix+#05),a
-114+  CF52 D9          xystop	exx
-115+  CF53 C9          	ret
-116+  CF54             xy8bbnew
-117+  CF54 3A 84 CF    	ld a,(orflag)
-118+  CF57 A7          	and a
-119+  CF58 7A          	ld a,d
-120+  CF59 20 01       	jr nz,4F
-121+  CF5B B6          	or (hl)
-122+  CF5C 77          4	ld (hl),a
-123+  CF5D CD 63 CF        call T32_COLOR
-124+  CF60 23          	inc hl
-125+  CF61 18 CB       	jr 3B
-126+  CF63             	
-127+  CF63 F5          T32_COLOR		push af
-128+  CF64 3A D1 CE    				ld a,(T32_ATT)
-129+  CF67 B7          				or a
-130+  CF68 C8          				ret z
-131+  CF69 E5          				push hl
-132+  CF6A             ; pokud je nula, tak se neobarvuje
-133+  CF6A             
-134+  CF6A             //				inc h
-135+  CF6A             //				inc l
-136+  CF6A             
-137+  CF6A 7C          				ld a,h
-138+  CF6B 0F          				rrca
-139+  CF6C 0F          				rrca
-140+  CF6D 0F          				rrca
-141+  CF6E E6 03       				and 3
-142+  CF70 F6 58       				or 88
-143+  CF72 67          				ld h,a
-144+  CF73 3A D1 CE    				ld a,(T32_ATT)
-145+  CF76 77          				ld (hl),a
-146+  CF77 E1          				pop hl
-147+  CF78 F1          				pop af
-148+  CF79 C9          				ret
-149+  CF7A             ;systemove premenne:(pre disu)
-150+  CF7A             
-151+  CF7A 00          flag0	db	#00
-152+  CF7B 00          flag1	db	#00
-153+  CF7C 00          flag2	db	#00
-154+  CF7D 00          inp	db	#00
-155+  CF7E             
-156+  CF7E             cursor
-157+  CF7E 00          xxx	db	#00
-158+  CF7F 00          yyy	db	#00
-159+  CF80 00 00       leni	dw	0
-160+  CF82 00 00       adr	dw	0
-161+  CF84             
-162+  CF84             
-163+  CF84 01          orflag  db  #01
-164+  CF85             //znaky
-165+  CF85             // INCBIN zx51.ch6
-166+  CF85             
-167+  CF85             	ENDMODULE
-607   CF85             	INCLUDE "sprite2.a80"
-001+  CF85             ; zobrazi sprite dle cisla v A pozice a data spritu jsou v tabulce na adrese HL; priklad nakonci!!!
-002+  CF85             ; nebo DE-pozice, HL-adresa (rutina OK)
-003+  CF85             ; zobrazuje sprites z programu SpriteEdit typ 2
-004+  CF85             	module sprite2
-005+  CF85             SP_      
-006+  CF85             ;        ld   hl,SP_TAB
-007+  CF85 87                   add  a,a
-008+  CF86 87                   add  a,a
-009+  CF87 16 00                ld   d,0
-010+  CF89 5F                   ld   e,a
-011+  CF8A 19                   add  hl,de
-012+  CF8B 5E                   ld   e,(hl)
-013+  CF8C 23                   inc  hl
-014+  CF8D 56                   ld   d,(hl)
-015+  CF8E 23                   inc  hl
-016+  CF8F D5             			 push de
-017+  CF90 5E                   ld   e,(hl)
-018+  CF91 23                   inc  hl
-019+  CF92 56                   ld   d,(hl)
-020+  CF93 EB                   ex   de,hl
-021+  CF94 D1                   pop de
-022+  CF95                      
-023+  CF95             
-024+  CF95             ;------------------------------
-025+  CF95             OK       
-026+  CF95 46                    ld b,(hl)
-027+  CF96 23          					inc hl
-028+  CF97 4E                    ld c,(hl)
-029+  CF98 23                    inc hl
-030+  CF99 7A                   ld   a,d
-031+  CF9A 0F                   rrca
-032+  CF9B 0F                   rrca
-033+  CF9C 0F                   rrca
-034+  CF9D E6 E0                and  %11100000
-035+  CF9F 83                   add  a,e
-036+  CFA0 5F                   ld   e,a
-037+  CFA1 7A                   ld   a,d
-038+  CFA2 E6 18                and  24
-039+  CFA4 F6 40                or   64
-040+  CFA6 57                   ld   d,a
-041+  CFA7             
-042+  CFA7 D5          OK_SEM   push de
-043+  CFA8 C5                   push bc
-044+  CFA9 7A                   ld   a,d
-045+  CFAA 0F                   rrca
-046+  CFAB 0F                   rrca
-047+  CFAC 0F                   rrca
-048+  CFAD E6 03                and  3
-049+  CFAF F6 58                or   88
-050+  CFB1 57                   ld   d,a
-051+  CFB2             
-052+  CFB2             OK_RADE1 ;call DE_BAJT
-053+  CFB2 7E                    ld a,(hl)
-054+  CFB3 23                    inc hl
-055+  CFB4             
-056+  CFB4 12                   ld   (de),a
-057+  CFB5 1C                   inc  e
-058+  CFB6 0D                   dec  c
-059+  CFB7 20 F9                jr   nz,OK_RADE1
-060+  CFB9 C1                   pop  bc
-061+  CFBA D1                   pop  de
-062+  CFBB             
-063+  CFBB D5          OK_DALSI push de
-064+  CFBC C5                   push bc
-065+  CFBD             OK_RADEK ;call DE_BAJT
-066+  CFBD 7E                    ld a,(hl)
-067+  CFBE 23                    inc hl
-068+  CFBF             
-069+  CFBF 12                   ld   (de),a
-070+  CFC0 1C                   inc  e
-071+  CFC1 0D                   dec  c
-072+  CFC2 20 F9                jr   nz,OK_RADEK
-073+  CFC4 C1                   pop  bc
-074+  CFC5 D1                   pop  de
-075+  CFC6 14                   inc  d
-076+  CFC7 7A                   ld   a,d
-077+  CFC8 E6 07                and  7
-078+  CFCA 20 EF                jr   nz,OK_DALSI
-079+  CFCC 3E 20                ld   a,32
-080+  CFCE 83                   add  a,e
-081+  CFCF 5F                   ld   e,a
-082+  CFD0 3F                   ccf
-083+  CFD1 9F                   sbc  a,a
-084+  CFD2 E6 F8                and  -8
-085+  CFD4 82                   add  a,d
-086+  CFD5 57                   ld   d,a
-087+  CFD6 10 CF                djnz OK_SEM
-088+  CFD8 C9                   ret
-089+  CFD9             
-090+  CFD9             /*
-091+  CFD9~            SP_TAB   defw #0B00  ;kam zobrazit
-092+  CFD9~                     defw 32768 ;odkud
-093+  CFD9~            
-094+  CFD9~            
-095+  CFD9             */
-096+  CFD9             	endmodule
-608   CFD9             MB03pluslogo
-609   CFD9             	INCBIN "MB03+LOGOv2.bin"
-610   D7BB             ultimatelogo	
-611   D7BB             	INCBIN "ULTIMATE.bin"
-612   D8BF             dots	
-613   D8BF             //	INCBIN "DOTS.bin"	
-614   D8BF             /*CaroLogo
-615   D8BF             	INCBIN "CaroLogo.bin" */
-616   D8BF             /*
-617   D8BF~            NewdimLogo
-618   D8BF~            	INCBIN "NewdimLogo.bin"
-619   D8BF~            eightbc_i
-620   D8BF~            	INCBIN "8BC_I.cde"
-621   D8BF~            EasyLogoSmall
-622   D8BF~            	INCBIN "EasyLogoSmall.bin"
-623   D8BF             */	
-624   D8BF             easyhdd	
-625   D8BF             	INCBIN "easyhdd.out"
-626   FAD3             easyhddend
-627   FAD3             /*
-628   FAD3~            zvuk
-629   FAD3~            	INCBIN "ZVUK.BIN"
-630   FAD3~            zvukend
-631   FAD3             */
-632   FAD3             
-633   FAD3             /*@SP_TAB
-634   FAD3~            @TAB_sprite1
-635   FAD3~            		 DEFB 10,4
-636   FAD3~                     DEFW CaroLogo
-637   FAD3~                     DEFB 24,20
-638   FAD3~                     DEFW NewdimLogo
-639   FAD3~                     defb 0,21
-640   FAD3~                     defw eightbc_i
-641   FAD3~                     defb 1,2
-642   FAD3~                     defw eightbc_i
-643   FAD3~                     defb 25,2
-644   FAD3~                     defw EasyLogoSmall
-645   FAD3             */		 
-646   FAD3             ; --------------- T E X T---------------------------------------
-647   FAD3             TEXT0 	 dc 16,69,"LMN128-Jan Kucera-Zlin/CZ"		 
-647   FAD3 10454C4D4E3132382D4A616E204B75636572612D5A6C696E2F43DA
-648   FAEE             TEXT3    dc 16,6,"break-ZXROM  1-BSDOS+EasyHDD  2-EasyHDD  l-DivIDE "
-648   FAEE 1006627265616B2D5A58524F4D2020312D4253444F532B456173794844442020
-648   FB0E 322D4561737948444420206C2D446976494445A0
-649   FB22             TEXT1    dc 16,69,"MB03+ Ultimate firmware 1.28"
-649   FB22 10454D4230332B20556C74696D617465206669726D7761726520312E32B8
-650   FB40             TEXT2	 dc 16,6,"e-128K reset  d-Devastace+  t-Diag  p-DivMMC "
-650   FB40 1006652D3132384B2072657365742020642D4465766173746163652B2020742D
-650   FB60 446961672020702D4469764D4D43A0
-651   FB6F 10 42 20 20 STRIPS	db 16,66,32,32
-652   FB73 10 46 20 20 		db 16,70,32,32
-653   FB77             		db 16,68,32,32,32,32,32
-653   FB77 10442020202020
-654   FB7E             		dc 16,69,32,32,32,32,32+128
-654   FB7E 104520202020A0
-655   FB85             
-656   FB85             TEXTTEST dc 16,6,"0123456789 128 WADHTUTTUU ZX Spectrum 128+2"
-656   FB85 100630313233343536373839203132382057414448545554545555205A582053
-656   FBA5 7065637472756D203132382BB2
-657   FBB2             TEXTTEST2 dc 16,6,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwyxz"
-657   FBB2 10064142434445464748494A4B4C4D4E4F505152535455565758595A61626364
-657   FBD2 65666768696A6B6C6D6E6F70717273747576777978FA
-658   FBE8             HW1		db 16,67,"HARDWARE: "
-658   FBE8 104348415244574152453A20
-659   FBF4 1007322EB0  		dc 16,7,"2.0"
-660   FBF9             HW2		db 16,3,"FPGA: "
-660   FBF9 1003465047413A20
-661   FC01             		dc 16,7,"Xilinx SPARTAN 7 XC7S50 / 100 MHz"
-661   FC01 100758696C696E78205350415254414E203720584337533530202F2031303020
-661   FC21 4D48FA
-662   FC24             HW3		db 16,3,"RTC: "
-662   FC24 10035254433A20
-663   FC2B             		dc 16,7,"Maxim DS3234"
-663   FC2B 10074D6178696D204453333233B4
-664   FC39             HW4		db 16,3,"SRAM: ",16,7,"16384 KBytes ",16,3,"FastSRAM: "
-664   FC39 10035352414D3A2010073136333834204B427974657320100346617374535241
-664   FC59 4D3A20
-665   FC5C             		dc 16,7,"4096 KBytes"
-665   FC5C 100734303936204B42797465F3
-666   FC69             HW5		db 16,3,"STORAGE: "
-666   FC69 100353544F524147453A20
-667   FC74             		dc 16,7,"CompactFlash, 2x microSD"
-667   FC74 1007436F6D70616374466C6173682C203278206D6963726F53C4
-668   FC8E             HW6		db 16,3,"OTHERS: "
-668   FC8E 10034F54484552533A20
-669   FC98             		dc 16,7,"USB, Wifi ESP8266, Matrix 8x8 LEDs"
-669   FC98 10075553422C205769666920455350383236362C204D61747269782038783820
-669   FCB8 4C4544F3
-670   FCBC             
-671   FCBC             CONF1	db 16,67,"CONFIGURATION: "
-671   FCBC 1043434F4E46494755524154494F4E3A20
-672   FCCD 1007312EB9  		dc 16,7,"1.9"
-673   FCD2             CONF2	db 16,3,"3xAY/TurboSound: "
-673   FCD2 1003337841592F547572626F536F756E643A20
-674   FCE5             		db 16,7,"ON  ",16,3,"SounDrive: ",16,7,"ON  ",16,3,"SAA1099: "
-674   FCE5 10074F4E20201003536F756E44726976653A2010074F4E202010035341413130
-674   FD05 39393A20
-675   FD09 10 07 4F CE 		dc 16,7,"ON"
-676   FD0D             CONF3	db 16,3,"DMA: "
-676   FD0D 1003444D413A20
-677   FD14             		db 16,7,"ON  ",16,3,"IDE: ",16,7,"ON  ",16,3,"SD: ",16,7,"ON  ",16,3,"RTC: ",16,7,"ON ",16,3,"Wifi: "
-677   FD14 10074F4E202010034944453A2010074F4E2020100353443A2010074F4E202010
-677   FD34 035254433A2010074F4E201003576966693A20
-678   FD47 10074F46C6  		dc 16,7,"OFF"		
-679   FD4C             FW1		dc 16,0,"FW:1.28/"
-679   FD4C 100046573A312E3238AF
-680   FD56 10 00       DATE	db 16,0
-681   FD58             		  LUA ALLPASS
-682   FD58~            			_pc('db	"' .. os.date("%Y%m%d") .. '"') 
-683   FD58             db	"20190415"
-683   FD58 3230313930343135
-683   FD60             		  ENDLUA
-684   FD60 A0          		dc " " 
-685   FD61             		//block 8 // kompenzace delky souboru kvuli os.date
-686   FD61             endramcode			
-687   FD61             		
-688   FD61             	savesna "boot.sna",ramcode//maincode//ramcode	
-689   FD61             	ENDMODULE	
+051   0056             /*				
+052   0056~            			ld bc, 203Bh		; ZXi portselect
+053   0056~            			out (c),a
+054   0056~            			ld a,8				; dissable monsterblaster till bsdos uses port 0Fh
+055   0056~            			ld bc, 213Bh		; ZXi port0 - Audio
+056   0056~            			out (c),a	
+057   0056             */			
+058   0056             /*			in	a, (ULA)
+059   0056~            			cpl
+060   0056~            			and	1Fh
+061   0056~            			jr  z,endramtest	;testram if anykey
+062   0056~            ;			jr endramtest
+063   0056~            ; ███████████████ RAM TEST ███████████████████████████████████████
+064   0056~            ;it's comes from legacy MB02+ bootloader version 003
+065   0056~            
+066   0056~            ramtest xor a					
+067   0056~            		ld 	hl, #4000
+068   0056~            		ld	de, #0608
+069   0056~            		ld	bc, 32765
+070   0056~            		out	(c), a
+071   0056~            
+072   0056~            ram_test_loop: 								
+073   0056~            		cpl
+074   0056~            		ld	(hl), a
+075   0056~            		xor	(hl)
+076   0056~            		ld	(hl), a
+077   0056~            		xor	(hl)
+078   0056~            		jr	nz, ram_fault
+079   0056~            		inc	l
+080   0056~            		jr	nz, ram_test_loop
+081   0056~            		inc	h
+082   0056~            		jr	nz, ram_test_loop
+083   0056~            		ld	h, #C0				; RAM pages start address
+084   0056~            		ld	a, e
+085   0056~            		cp	d
+086   0056~            		jr	nz, no_page5		; Don't test RAM page 5 again
+087   0056~            		dec	e
+088   0056~            
+089   0056~            no_page5: 				
+090   0056~            		cp	3					; Don't test RAM page 2 again
+091   0056~            		jr	nz, no_page2
+092   0056~            		dec	e
+093   0056~            
+094   0056~            no_page2: 				
+095   0056~            		xor	a
+096   0056~            		dec	e
+097   0056~            		out	(c), e
+098   0056~            		jr	nz, ram_test_loop
+099   0056~            ;endtest
+100   0056~            		jr endramtest
+101   0056~            
+102   0056~            ram_fault: 				
+103   0056~            		ld	a, e
+104   0056~            		out	(254), a
+105   0056~            
+106   0056~            delay1: 					
+107   0056~            		djnz	$
+108   0056~            		cpl
+109   0056~            		out	(254), a
+110   0056~            		ld	b, 7
+111   0056~            
+112   0056~            delay2: 					
+113   0056~            		djnz	$
+114   0056~            		jr	ram_fault			
+115   0056~            ; ███████████████ E N D  R A M  T E S T ███████████████████████████████████████			
+116   0056             */			
+117   0056             skipramtest			
+118   0056             
+119   0056 21 64 00    endramtest	ld hl,ramcodeinrom
+120   0059 11 64 C0    			ld de,ramcode
+121   005C 01 49 1C    			ld bc,endramcode-ramcode
+122   005F ED B0       			ldir
+123   0061 C3 64 C0    			jp ramcode
+124   0064             
+125   0064             ramcodeinrom	
+126   0064             
+127   0064             			ent						; restore address to compile to right place
+128   C064             ramcode		
+129   C064 F3          			di						; for sna test
+130   C065 31 00 00    			ld sp,0				; for sna test
+131   C068             ; temporary switch to MB02+ machine			
+132   C068 AF          			xor a
+133   C069 01 3B 20    			ld bc,#203B				//ZXi portselect
+134   C06C ED 79       			out (c),a
+135   C06E 01 3B 21    			ld bc,#213B
+136   C071 3E 01       			ld a,1					//HW - 1 - MB02+
+137   C073 ED 79       			out (c),a
+138   C075             
+139   C075 CD 73 C6    			call cls.CLS
+140   C078 3E 07       			ld   a,7
+141   C07A 21 00 58    			ld   HL,22528
+142   C07D 11 01 58    			ld   DE,22529
+143   C080 01 FF 02    			ld   BC,767
+144   C083 77          			ld   (HL),a
+145   C084 ED B0       			ldir
+146   C086 3E 00       			ld a,0
+147   C088 32 D6 D0    			ld (txy32.orflag),a
+148   C08B 3E 42       			ld a,66
+149   C08D 32 23 D0    			ld (txy32.T32_ATT),a
+150   C090 01 00 00    			ld	bc,#0000
+151   C093 CD 96 C1    			call fall1
+152   C096 CD 90 C6    				call iinkey.IINKEY		; waiting for key
+153   C099 C2 5D C2    				jp nz,skipanim
+154   C09C 3E 46       			ld a,70
+155   C09E 32 23 D0    			ld (txy32.T32_ATT),a
+156   C0A1 01 10 00    			ld	bc,#0010
+157   C0A4 CD 96 C1    			call fall1
+158   C0A7 CD 90 C6    				call iinkey.IINKEY		; waiting for key
+159   C0AA C2 5D C2    				jp nz,skipanim			
+160   C0AD 3E 44       			ld a,68
+161   C0AF 32 23 D0    			ld (txy32.T32_ATT),a
+162   C0B2 01 2E 00    			ld	bc,#002E
+163   C0B5 CD 96 C1    			call fall1
+164   C0B8 CD 90 C6    				call iinkey.IINKEY		; waiting for key
+165   C0BB C2 5D C2    				jp nz,skipanim			
+166   C0BE 3E 45       			ld a,69
+167   C0C0 32 23 D0    			ld (txy32.T32_ATT),a
+168   C0C3 01 59 00    			ld	bc,#0059
+169   C0C6 CD 96 C1    			call fall1
+170   C0C9 CD 90 C6    				call iinkey.IINKEY		; waiting for key
+171   C0CC C2 5D C2    				jp nz,skipanim
+172   C0CF             				
+173   C0CF 3E 01       			ld a,1
+174   C0D1 32 D6 D0    			ld (txy32.orflag),a
+175   C0D4 3E 42       			ld a,66
+176   C0D6 32 23 D0    			ld (txy32.T32_ATT),a
+177   C0D9 01 00 00    			ld	bc,#0000
+178   C0DC CD A7 C1    			call fall2
+179   C0DF CD 90 C6    				call iinkey.IINKEY		; waiting for key
+180   C0E2 C2 5D C2    				jp nz,skipanim			
+181   C0E5 3E 46       			ld a,70
+182   C0E7 32 23 D0    			ld (txy32.T32_ATT),a
+183   C0EA 01 10 00    			ld	bc,#0010
+184   C0ED CD A7 C1    			call fall2			
+185   C0F0 CD 90 C6    				call iinkey.IINKEY		; waiting for key
+186   C0F3 C2 5D C2    				jp nz,skipanim			
+187   C0F6 3E 44       			ld a,68
+188   C0F8 32 23 D0    			ld (txy32.T32_ATT),a
+189   C0FB 01 28 00    			ld	bc,#0028
+190   C0FE CD B8 C1    			call fall3
+191   C101 CD 90 C6    				call iinkey.IINKEY		; waiting for key
+192   C104 C2 5D C2    				jp nz,skipanim			
+193   C107 3E 45       			ld a,69
+194   C109 32 23 D0    			ld (txy32.T32_ATT),a
+195   C10C 01 58 00    			ld	bc,#0058
+196   C10F CD C9 C1    			call fall4
+197   C112 CD 90 C6    				call iinkey.IINKEY		; waiting for key
+198   C115 C2 5D C2    				jp nz,skipanim			
+199   C118             			
+200   C118 3E 00       			ld a,0
+201   C11A 32 D6 D0    			ld (txy32.orflag),a
+202   C11D 3E 45       			ld a,69
+203   C11F 32 23 D0    			ld (txy32.T32_ATT),a
+204   C122 01 57 2A    			ld	bc,#2A57
+205   C125 11 60 2A    			ld  de,#2A60
+206   C128 3E 4B       			ld a,#4B
+207   C12A CD 51 C1    			call wide1
+208   C12D CD 90 C6    				call iinkey.IINKEY		; waiting for key
+209   C130 C2 5D C2    				jp nz,skipanim			
+210   C133 06 01       			ld b,1
+211   C135 CD 57 C7    			call wait.wait
+212   C138 3E 44       			ld a,68
+213   C13A 32 23 D0    			ld (txy32.T32_ATT),a
+214   C13D 01 2A 2A    			ld	bc,#2A2A
+215   C140 11 35 2A    			ld  de,#2A35
+216   C143 3E 1F       			ld a,#1F
+217   C145 CD 51 C1    			call wide1
+218   C148 CD 90 C6    				call iinkey.IINKEY		; waiting for key
+219   C14B C2 5D C2    				jp nz,skipanim			
+220   C14E             
+221   C14E             ;			call iinkey.ANYKEY	
+222   C14E C3 27 C2    			jp follow1
+223   C151             			
+224   C151 F5          wide1		push af
+225   C152 D5          			push de
+226   C153 C5          			push bc
+227   C154 ED 43 D0 D0 			ld	(txy32.cursor),bc
+228   C158 3E 84       			ld a,132
+229   C15A CD 24 D0    			call txy32.xy
+230   C15D C1          			pop bc
+231   C15E C5          			push bc
+232   C15F 3E 08       			ld a,8
+233   C161 80          			add a,b
+234   C162 47          			ld b,a
+235   C163 3E 86       			ld a,134
+236   C165 ED 43 D0 D0 			ld	(txy32.cursor),bc
+237   C169 CD 24 D0    			call txy32.xy
+238   C16C C1          			pop bc
+239   C16D D1          			pop de
+240   C16E C5          			push bc
+241   C16F D5          			push de
+242   C170 ED 53 D0 D0 			ld	(txy32.cursor),de
+243   C174 3E 81       			ld a,129
+244   C176 CD 24 D0    			call txy32.xy
+245   C179 D1          			pop de
+246   C17A D5          			push de
+247   C17B 3E 08       			ld a,8
+248   C17D 82          			add a,d
+249   C17E 57          			ld d,a
+250   C17F ED 53 D0 D0 			ld	(txy32.cursor),de
+251   C183 3E 83       			ld a,131
+252   C185 CD 24 D0    			call txy32.xy
+253   C188 06 04       			ld b,4
+254   C18A CD 57 C7    			call wait.wait
+255   C18D D1          			pop de
+256   C18E C1          			pop bc
+257   C18F F1          			pop af
+258   C190 1C          			inc e
+259   C191 0D          			dec c
+260   C192 B9          			cp c
+261   C193 20 BC       			jr nz,wide1
+262   C195 C9          			ret
+263   C196             			
+264   C196 C5          fall1		push bc
+265   C197 CD 04 C2    			call singledot
+266   C19A 06 01       			ld b,1
+267   C19C CD 57 C7    			call wait.wait
+268   C19F C1          			pop bc
+269   C1A0 04          			inc b
+270   C1A1 3E 2B       			ld a,#2B
+271   C1A3 B8          			cp b
+272   C1A4 20 F0       			jr nz,fall1
+273   C1A6 C9          			ret
+274   C1A7 C5          fall2		push bc
+275   C1A8 CD DA C1    			call halfdot
+276   C1AB 06 01       			ld b,1
+277   C1AD CD 57 C7    			call wait.wait
+278   C1B0 C1          			pop bc
+279   C1B1 04          			inc b
+280   C1B2 3E 2B       			ld a,#2B
+281   C1B4 B8          			cp b
+282   C1B5 20 F0       			jr nz,fall2
+283   C1B7 C9          			ret			
+284   C1B8             	
+285   C1B8 C5          fall3		push bc
+286   C1B9 CD E8 C1    			call halfdot3
+287   C1BC 06 01       			ld b,1
+288   C1BE CD 57 C7    			call wait.wait
+289   C1C1 C1          			pop bc
+290   C1C2 04          			inc b
+291   C1C3 3E 2B       			ld a,#2B
+292   C1C5 B8          			cp b
+293   C1C6 20 F0       			jr nz,fall3
+294   C1C8 C9          			ret	
+295   C1C9             
+296   C1C9 C5          fall4		push bc
+297   C1CA CD F6 C1    			call halfdot4
+298   C1CD 06 01       			ld b,1
+299   C1CF CD 57 C7    			call wait.wait
+300   C1D2 C1          			pop bc
+301   C1D3 04          			inc b
+302   C1D4 3E 2B       			ld a,#2B
+303   C1D6 B8          			cp b
+304   C1D7 20 F0       			jr nz,fall4
+305   C1D9 C9          			ret				
+306   C1DA             	
+307   C1DA ED 43 D0 D0 halfdot     ld	(txy32.cursor),bc
+308   C1DE 3E 84       			ld a,132
+309   C1E0 CD 24 D0    			call txy32.xy
+310   C1E3 3E 85       			ld a,133
+311   C1E5 C3 24 D0    			jp txy32.xy
+312   C1E8             
+313   C1E8 ED 43 D0 D0 halfdot3    ld	(txy32.cursor),bc
+314   C1EC 3E 88       			ld a,136
+315   C1EE CD 24 D0    			call txy32.xy
+316   C1F1 3E 89       			ld a,137
+317   C1F3 C3 24 D0    			jp txy32.xy	
+318   C1F6             
+319   C1F6 ED 43 D0 D0 halfdot4    ld	(txy32.cursor),bc
+320   C1FA 3E 8A       			ld a,138
+321   C1FC CD 24 D0    			call txy32.xy
+322   C1FF 3E 8B       			ld a,139
+323   C201 C3 24 D0    			jp txy32.xy	
+324   C204             			
+325   C204 ED 43 D0 D0 singledot	ld	(txy32.cursor),bc
+326   C208 3E 84       			ld a,132
+327   C20A C5          			push bc
+328   C20B CD 24 D0    			call txy32.xy
+329   C20E 3E 85       			ld a,133
+330   C210 CD 24 D0    			call txy32.xy
+331   C213 C1          			pop	bc
+332   C214 3E 08       			ld a,8
+333   C216 80          			add a,b
+334   C217 47          			ld b,a
+335   C218 ED 43 D0 D0 			ld	(txy32.cursor),bc	
+336   C21C 3E 86       			ld a,134
+337   C21E CD 24 D0    			call txy32.xy
+338   C221 3E 87       			ld a,135
+339   C223 CD 24 D0    			call txy32.xy
+340   C226 C9          			ret
+341   C227             
+342   C227 11 0F 05    follow1		ld de,#050F
+343   C22A 21 0D D9    	        ld hl,ultimatelogo
+344   C22D 3E 0D       			ld a,13			// number of sprites in animations
+345   C22F F5          1			push af
+346   C230 D5          			push de
+347   C231 E5          			push hl
+348   C232 CD E7 D0    			call sprite2.OK
+349   C235 06 0C       			ld b,12
+350   C237 CD 57 C7    			call wait.wait
+351   C23A E1          			pop hl
+352   C23B 11 14 00    			ld de,20			// lenght of sprite2
+353   C23E 19          			add hl,de
+354   C23F D1          			pop de
+355   C240 1C          			inc e
+356   C241 F1          			pop af
+357   C242 3D          			dec a
+358   C243 20 EA       			jr nz,1B
+359   C245             //Ultimate		
+360   C245 11 00 05    			ld de,#0500
+361   C248 21 11 DA    	        ld hl,dots+38*0
+362   C24B 3E 06       			ld a,6			// number of sprites in animations
+363   C24D F5          2			push af
+364   C24E D5          			push de
+365   C24F E5          			push hl
+366   C250             //			call sprite2.OK
+367   C250 06 09       			ld b,9
+368   C252 CD 57 C7    			call wait.wait
+369   C255 E1          			pop hl
+370   C256 D1          			pop de
+371   C257 1C          			inc e
+372   C258 1C          			inc e
+373   C259 F1          			pop af
+374   C25A 3D          			dec a
+375   C25B 20 F0       			jr nz,2B
+376   C25D             skipanim			
+377   C25D 11 00 00    			ld de,#0000
+378   C260 21 2B D1    	    ld hl,MB03pluslogo
+379   C263 CD E7 D0    			call sprite2.OK
+380   C266             /*			ld de,#040A
+381   C266~            	        ld hl,CaroLogo
+382   C266~            			call sprite2.OK
+383   C266             */
+384   C266 21 D9 DA    			ld hl, STRIPS
+385   C269 01 00 48    			ld bc,#4800
+386   C26C ED 43 D0 D0 			ld	(txy32.cursor),bc
+387   C270 E5          			push hl
+388   C271 CD 0A D0    			call txy32.txy
+389   C274 E1          			pop hl
+390   C275 01 00 A0    			ld bc,#A000
+391   C278 ED 43 D0 D0 			ld	(txy32.cursor),bc
+392   C27C CD 0A D0    			call txy32.txy
+393   C27F             ;carymary         
+394   C27F 01 00 48    			 ld bc,#4800
+395   C282 11 FF 48    			 ld de,#48ff
+396   C285 CD A1 C5    			 call draw_jugo.DRAW
+397   C288             
+398   C288 01 7A 3D    			ld	bc,#3D7A
+399   C28B ED 43 04 C8 			ld	(txy51.cursor),bc
+400   C28F 21 11 DA    			ld	hl,TEXT0
+401   C292 CD 5F C7    			call txy51.txy
+402   C295 01 00 A8    			ld	bc,#A800
+403   C298 ED 43 04 C8 			ld	(txy51.cursor),bc
+404   C29C 21 2C DA    			ld	hl,TEXT4
+405   C29F CD 5F C7    			call txy51.txy			
+406   C2A2 01 00 B8    			ld	bc,#B800
+407   C2A5 ED 43 04 C8 			ld	(txy51.cursor),bc
+408   C2A9 21 75 DA    			ld	hl,TEXT3
+409   C2AC CD 5F C7    			call txy51.txy
+410   C2AF 01 00 B0    			ld	bc,#B000
+411   C2B2 ED 43 04 C8 			ld	(txy51.cursor),bc
+412   C2B6 21 58 DA    			ld	hl,TEXT2
+413   C2B9 CD 5F C7    			call txy51.txy
+414   C2BC 01 B1 9E    			ld	bc,#9EB1
+415   C2BF ED 43 04 C8 			ld	(txy51.cursor),bc
+416   C2C3 21 98 DC    			ld	hl,FW1
+417   C2C6 CD 5F C7    			call txy51.txy
+418   C2C9 01 D9 9E    			ld	bc,#9ED9
+419   C2CC ED 43 04 C8 			ld	(txy51.cursor),bc
+420   C2D0 21 A2 DC    			ld	hl,DATE
+421   C2D3 CD 5F C7    			call txy51.txy		
+422   C2D6             
+423   C2D6 01 00 50    			ld	bc,#5000
+424   C2D9 ED 43 04 C8 			ld	(txy51.cursor),bc
+425   C2DD 21 EF DA    			ld	hl,HW1
+426   C2E0 CD 5F C7    			call txy51.txy
+427   C2E3 01 03 58    			ld	bc,#5803
+428   C2E6 ED 43 04 C8 			ld	(txy51.cursor),bc
+429   C2EA 21 00 DB    			ld	hl,HW2
+430   C2ED CD 5F C7    			call txy51.txy
+431   C2F0 01 03 60    			ld	bc,#6003
+432   C2F3 ED 43 04 C8 			ld	(txy51.cursor),bc
+433   C2F7 21 29 DB    			ld	hl,HW3
+434   C2FA CD 5F C7    			call txy51.txy
+435   C2FD 01 03 68    			ld	bc,#6803
+436   C300 ED 43 04 C8 			ld	(txy51.cursor),bc
+437   C304 21 3E DB    			ld	hl,HW4
+438   C307 CD 5F C7    			call txy51.txy
+439   C30A 01 03 70    			ld	bc,#7003
+440   C30D ED 43 04 C8 			ld	(txy51.cursor),bc
+441   C311 21 6D DB    			ld	hl,HW5
+442   C314 CD 5F C7    			call txy51.txy
+443   C317 01 03 78    			ld	bc,#7803
+444   C31A ED 43 04 C8 			ld	(txy51.cursor),bc
+445   C31E 21 92 DB    			ld	hl,HW6
+446   C321 CD 5F C7    			call txy51.txy
+447   C324             
+448   C324 01 00 80    			ld	bc,#8000
+449   C327 ED 43 04 C8 			ld	(txy51.cursor),bc
+450   C32B 21 C0 DB    			ld	hl,CONF1
+451   C32E CD 5F C7    			call txy51.txy
+452   C331 01 03 88    			ld	bc,#8803
+453   C334 ED 43 04 C8 			ld	(txy51.cursor),bc
+454   C338 21 D6 DB    			ld	hl,CONF2
+455   C33B CD 5F C7    			call txy51.txy
+456   C33E 01 03 90    			ld	bc,#9003
+457   C341 ED 43 04 C8 			ld	(txy51.cursor),bc
+458   C345 21 18 DC    			ld	hl,CONF3
+459   C348             //carymary2
+460   C348 CD 5F C7    			call txy51.txy		
+461   C34B 01 00 A6    			 ld bc,#A600
+462   C34E 11 FF A6    			 ld de,#A6ff
+463   C351 CD A1 C5    			 call draw_jugo.DRAW
+464   C354             			
+465   C354             /*			ld	bc,#9000
+466   C354~            			ld	(txy51.cursor),bc
+467   C354~            			ld	hl,TEXTTEST2
+468   C354~            			call txy51.txy			
+469   C354             */			
+470   C354 CD 90 C6    1			call iinkey.IINKEY		; waiting for key
+471   C357 28 FB       			jr z,1B
+472   C359 FE 11       			cp 11h					; break
+473   C35B 20 0E       			jr nz,2F				; no break
+474   C35D AF          			xor a					; break
+475   C35E D3 17       			out (23),a 				; dissable MB03+ SRAM
+476   C360             									;ZX128+2A rom
+477   C360 01 FD 1F    			ld bc,8189
+478   C363 ED 79       			out (c),a
+479   C365             			
+480   C365 01 FD 7F    			ld bc,32765				; ZX128 rom0 
+481   C368 ED 79       			out (c),a
+482   C36A C7          			rst 0					; jp to 0
+483   C36B             2			
+484   C36B FE 31       			cp '1'					//key 1
+485   C36D 20 42       			jr nz,3F
+486   C36F 3E 81       			ld a,129				; install bsrom from "rom"
+487   C371 D3 17       			out (23),a
+488   C373 21 00 00    			ld hl,0
+489   C376 11 00 80    			ld de,32768
+490   C379 01 00 40    			ld bc,16384
+491   C37C ED B0       			ldir
+492   C37E 3E 60       			ld a,96
+493   C380 D3 17       			out (23), a
+494   C382 21 00 80    			ld hl,32768
+495   C385 11 00 00    			ld de,0
+496   C388 01 00 40    			ld bc,16384
+497   C38B ED B0       			ldir
+498   C38D 3E 82       			ld a,130				; install bsrom from "rom"
+499   C38F D3 17       			out (23),a
+500   C391 21 00 00    			ld hl,0
+501   C394 11 00 80    			ld de,32768
+502   C397 01 00 40    			ld bc,16384
+503   C39A ED B0       			ldir
+504   C39C 3E 61       			ld a,97
+505   C39E D3 17       			out (23), a
+506   C3A0 21 00 80    			ld hl,32768
+507   C3A3 11 00 00    			ld de,0
+508   C3A6 01 00 40    			ld bc,16384
+509   C3A9 ED B0       			ldir
+510   C3AB 3E 40       			ld a,64
+511   C3AD D3 17       			out (23),a
+512   C3AF 18 04       			jr 4F
+513   C3B1             3			
+514   C3B1 FE 21       			cp '!'					; key !
+515   C3B3 20 30       			jr nz, 5F				
+516   C3B5 AF          4			xor a
+517   C3B6 01 3B 20    			ld bc,#203B					//ZXi portselect
+518   C3B9 ED 79       			out (c),a
+519   C3BB 01 3B 21    			ld bc,#213B
+520   C3BE 3E FF       			ld a,255					//HW - FF - Firmware
+521   C3C0 ED 79       			out (c),a
+522   C3C2 AF          			xor a
+523   C3C3 D3 27       			out (#27),a
+524   C3C5 D3 67       			out (#67),a
+525   C3C7 3E 06       			ld a,6						//
+526   C3C9 D3 07       			out (#07),a
+527   C3CB 3C          			inc a
+528   C3CC D3 47       			out (#47),a
+529   C3CE 21 00 00    			ld hl,0			; run EasyHDD
+530   C3D1 11 00 80    			ld de,32768
+531   C3D4 01 00 40    			ld bc,16384
+532   C3D7 ED B0       			ldir
+533   C3D9 01 3B 21    			ld bc,#213B
+534   C3DC 3E 01       			ld a,1					//HW - 1 - MB02+
+535   C3DE ED 79       			out (c),a					
+536   C3E0 CD 00 80    			call 32768
+537   C3E3 18 04       			jr 6F
+538   C3E5             
+539   C3E5 FE 65       5			cp 'e'					// key e
+540   C3E7 20 07       			jr nz, 7F				// no key
+541   C3E9             			
+542   C3E9 3E 40       6			ld a,64					// 128K reset in BSROM140
+543   C3EB D3 17       			out (23),a
+544   C3ED C3 06 39    			jp #3906				//jp to bsrom140
+545   C3F0             			
+546   C3F0 FE 64       7			cp 'd'
+547   C3F2 20 30       			jr nz, 8F				
+548   C3F4             ; clear below 3/3			
+549   C3F4 3E 07       			ld   a,7
+550   C3F6 21 00 5A    			ld   HL,22528+512
+551   C3F9 11 01 5A    			ld   DE,22529+512
+552   C3FC 01 FF 00    			ld   BC,255
+553   C3FF 77          			ld   (HL),a
+554   C400 ED B0       			ldir
+555   C402 21 00 50    			ld   HL,20480
+556   C405 11 01 50    			ld   DE,20481
+557   C408 01 FF 07    			ld   BC,2047
+558   C40B 75          			ld   (HL),l
+559   C40C ED B0       			ldir
+560   C40E 3E 83       			ld a,131
+561   C410 D3 17       			out (23),a
+562   C412 21 00 00    			ld hl,0
+563   C415 11 78 69    			ld de,27000
+564   C418 01 70 17    			ld bc,6000
+565   C41B ED B0       			ldir
+566   C41D 3E 40       			ld a,64
+567   C41F D3 17       			out (23),a
+568   C421 C3 78 69    			jp 27000
+569   C424             			
+570   C424 FE 74       8			cp 't'					// key t - zx diagnostics
+571   C426 20 1E       			jr nz, 9F				// no key
+572   C428 AF          			xor a
+573   C429 01 3B 20    			ld bc,#203B				//ZXi portselect
+574   C42C ED 79       			out (c),a
+575   C42E 01 3B 21    			ld bc,#213B
+576   C431 3E FF       			ld a,255					//HW - FF - Firmware
+577   C433 ED 79       			out (c),a
+578   C435 AF          			xor a
+579   C436 D3 27       			out (#27),a
+580   C438 D3 67       			out (#67),a
+581   C43A 3E 02       			ld a,2
+582   C43C D3 07       			out (#07),a
+583   C43E 3C          			inc a
+584   C43F D3 47       			out (#47),a
+585   C441 3E 60       			ld a,%01100000	;enable flash write disable
+586   C443 D3 53       			out (#53),a
+587   C445 C7          			rst 0
+588   C446 FE 32       9			cp '2'					// key 2 - Papaya DOS- ESXDOS DivMMC
+589   C448 20 35       			jr nz, 10F				
+590   C44A AF          			xor a
+591   C44B D3 17       			out (23),a
+592   C44D 01 3B 20    			ld bc,#203B				//ZXi portselect
+593   C450 ED 79       			out (c),a
+594   C452 01 3B 21    			ld bc,#213B
+595   C455 3E 02       			ld a,2					//HW - 2 - DIVMMC
+596   C457 ED 79       			out (c),a
+597   C459 01 3B 20    			ld bc,#203B				//ZXi portselect 
+598   C45C 3E 02       			ld a,2
+599   C45E ED 79       			out (c),a
+600   C460 01 3B 21    			ld bc,#213B
+601   C463 AF          			xor a					//IDE - 0 dissable
+602   C464 ED 79       			out (c),a
+603   C466 3E 80       			ld a,128
+604   C468 D3 E3       div_erase	out (#E3),a
+605   C46A 21 00 20    			ld hl,8192
+606   C46D 11 01 20    			ld de,8193
+607   C470 01 FF 1F    			ld bc,8191
+608   C473 75          			ld (hl),l
+609   C474 ED B0       			ldir
+610   C476 3C          			inc a
+611   C477 FE 85       			cp 128+5
+612   C479 20 ED       			jr nz,div_erase		//delete first 32KB od DivIde RAM
+613   C47B AF          			xor a							//is enought to erase bank0 or
+614   C47C D3 E3       			out (#E3),a				//to force cold start zero $2dXX in page 0
+615   C47E C7          			rst 0
+616   C47F FE 52       10		cp "R"					//restart firmware
+617   C481 20 01       			jr nz, 11F
+618   C483 C7          			rst 0
+619   C484 FE 72       11		cp "r"					//restart to ramcode
+620   C486 20 03       			jr nz,12F
+621   C488 C3 64 C0    			jp ramcode
+622   C48B FE 54       12		cp "T"					//advance system info
+623   C48D C2 27 C5    			jp nz,14F
+624   C490 21 00 50    13			ld hl,#5000
+625   C493 11 01 50    			ld de,#5001
+626   C496 01 FF 07    			ld bc,#07ff
+627   C499 ED B0       			ldir
+628   C49B AF          			xor a
+629   C49C 01 3B 20    			ld bc,#203B				//ZXi portselect
+630   C49F ED 79       			out (c),a
+631   C4A1 3E FF       			ld a,#FF
+632   C4A3 01 3B 21    			ld bc,#213B			
+633   C4A6 ED 79       			out (c),a
+634   C4A8 3E E0       			ld a,#E0				//FRAM active
+635   C4AA D3 53       			out (#53),a
+636   C4AC 01 00 90    			ld	bc,#9000
+637   C4AF ED 43 04 C8 			ld	(txy51.cursor),bc
+638   C4B3 21 57 DC    			ld	hl,ADVS1
+639   C4B6 CD 5F C7    			call txy51.txy
+640   C4B9 2A FC 3F    			ld hl,(#3FFC)
+641   C4BC CD 70 C5    			call NUMBER4
+642   C4BF 01 00 98    			ld	bc,#9800
+643   C4C2 ED 43 04 C8 			ld	(txy51.cursor),bc
+644   C4C6 21 64 DC    			ld	hl,ADVS2
+645   C4C9 CD 5F C7    			call txy51.txy
+646   C4CC 2A F8 3F    			ld hl,(#3FF8)
+647   C4CF CD 70 C5    			call NUMBER4
+648   C4D2 01 00 A0    			ld	bc,#A000
+649   C4D5 ED 43 04 C8 			ld	(txy51.cursor),bc
+650   C4D9 21 71 DC    			ld	hl,ADVS3
+651   C4DC CD 5F C7    			call txy51.txy
+652   C4DF 2A F4 3F    			ld hl,(#3FF4)
+653   C4E2 CD 70 C5    			call NUMBER4
+654   C4E5 01 00 A8    			ld	bc,#A800
+655   C4E8 ED 43 04 C8 			ld	(txy51.cursor),bc
+656   C4EC 21 7E DC    			ld	hl,ADVS4
+657   C4EF CD 5F C7    			call txy51.txy
+658   C4F2 2A F0 3F    			ld hl,(#3FF0)
+659   C4F5 CD 70 C5    			call NUMBER4
+660   C4F8 01 00 B0    			ld	bc,#B000
+661   C4FB ED 43 04 C8 			ld	(txy51.cursor),bc
+662   C4FF 21 8B DC    			ld	hl,ADVS5
+663   C502 CD 5F C7    			call txy51.txy
+664   C505 2A EC 3F    			ld hl,(#3FEC)
+665   C508 CD 70 C5    			call NUMBER4
+666   C50B             //carymary2
+667   C50B 01 00 B8    			ld bc,#B800
+668   C50E ED 43 D0 D0 			ld	(txy32.cursor),bc
+669   C512 21 D9 DA    			LD HL, STRIPS
+670   C515 CD 0A D0    			call txy32.txy
+671   C518 01 00 BF    			ld bc,#BF00
+672   C51B 11 FF BF    			ld de,#BFff
+673   C51E CD A1 C5    			call draw_jugo.DRAW
+674   C521 CD 83 C6    			call iinkey.ANYKEY
+675   C524 C3 90 C4    			jp 13B
+676   C527             
+677   C527 FE 40       14		cp "@"					//DivIDE
+678   C529 C2 54 C3    			jp nz, 1B
+679   C52C AF          			xor a
+680   C52D D3 17       			out (23),a
+681   C52F 01 3B 20    			ld bc,#203B				//ZXi portselect
+682   C532 ED 79       			out (c),a
+683   C534 01 3B 21    			ld bc,#213B
+684   C537 3E 03       			ld a,3						//HW - 3 - DIVMMC/DIVIDE
+685   C539 ED 79       			out (c),a
+686   C53B             
+687   C53B 01 3B 20    			ld bc,#203B				//ZXi portselect 
+688   C53E 3E 02       			ld a,2
+689   C540 ED 79       			out (c),a
+690   C542 01 3B 21    			ld bc,#213B
+691   C545 3E 02       			ld a,2						//IDE - 2 PVL ports- DIVMMC/DIVIDE
+692   C547 ED 79       			out (c),a
+693   C549             
+694   C549 01 3B 20    			ld bc,#203B				//ZXi portselect 
+695   C54C 3E 01       			ld a,1						//Audio
+696   C54E ED 79       			out (c),a
+697   C550 01 3B 21    			ld bc,#213B
+698   C553 3E 10       			ld a,%00010000  	//dissable GS
+699   C555 ED 79       			out (c),a
+700   C557             
+701   C557 3E 80       			ld a,128
+702   C559 D3 E3       div_erase2	out (#E3),a
+703   C55B 21 00 20    			ld hl,8192
+704   C55E 11 01 20    			ld de,8193
+705   C561 01 FF 1F    			ld bc,8191
+706   C564 75          			ld (hl),l
+707   C565 ED B0       			ldir
+708   C567 3C          			inc a
+709   C568 FE 85       			cp 128+5
+710   C56A 20 ED       			jr nz,div_erase2			//delete first 32KB od DivIde RAM
+711   C56C AF          			xor a						//is enought to erase bank0 or
+712   C56D D3 E3       			out (#E3),a					//to force cold start zero $2dXX in page 0
+713   C56F C7          			rst 0
+714   C570             
+715   C570             ;------------------------------
+716   C570             ;HL-HODNOTA
+717   C570             ;TISKNE CISLO TYPU INTEGER
+718   C570 11 F0 D8    NUMBER4  ld   de,-10000
+719   C573 CD 8E C5             call NUM_JED
+720   C576 11 18 FC    NUMBER3  ld   de,-1000
+721   C579 CD 8E C5             call NUM_JED
+722   C57C 11 9C FF    NUMBER2  ld   de,-100
+723   C57F CD 8E C5             call NUM_JED
+724   C582 11 F6 FF    NUMBER1  ld   de,-10
+725   C585 CD 8E C5             call NUM_JED
+726   C588 7D          NUMBER0  ld   a,l
+727   C589 C6 30                add  a,48
+728   C58B C3 79 C7             jp   txy51.xy
+729   C58E             
+730   C58E AF          NUM_JED  xor  a
+731   C58F 19          NUM_JED1 add  hl,de
+732   C590 30 03                jr   nc,NUM_PRIC
+733   C592 3C                   inc  a
+734   C593 18 FA                jr   NUM_JED1
+735   C595 ED 52       NUM_PRIC sbc  hl,de
+736   C597 C6 30                add  a,48
+737   C599 C5                   push bc
+738   C59A E5                   push hl
+739   C59B CD 79 C7             call txy51.xy
+740   C59E E1                   pop  hl
+741   C59F C1                   pop  bc
+742   C5A0                      ;;inc  c
+743   C5A0 C9                   ret
+744   C5A1             
+745   C5A1             ; --------------- L I B R A R I E S ---------------------------------------	
+746   C5A1             	
+747   C5A1             //INCLUDE "nasobeniHLDE.a80"
+748   C5A1             	INCLUDE "draw-jugo.a80"
+001+  C5A1             ;rutina na kresleni cary. pochazi z nejakeho jugoslavskeho casaku
+002+  C5A1             ;BC-ODKUD DE-KAM NAKRESLI CARU
+003+  C5A1             ;POCATEK VLEVO NAHORE (0,0)
+004+  C5A1             	module draw_jugo
+005+  C5A1 7A          DRAW     LD   A,D
+006+  C5A2 FE C0                CP   192
+007+  C5A4 D0                   RET  NC
+008+  C5A5 78                   LD   A,B
+009+  C5A6 FE C0                CP   192
+010+  C5A8 D0                   RET  NC
+011+  C5A9 3F                   CCF
+012+  C5AA 1F                   RRA
+013+  C5AB 37                   SCF
+014+  C5AC 1F                   RRA
+015+  C5AD A7                   AND  A
+016+  C5AE 1F                   RRA
+017+  C5AF A8                   XOR  B
+018+  C5B0 E6 F8                AND  248
+019+  C5B2 A8                   XOR  B
+020+  C5B3 67                   LD   H,A
+021+  C5B4 79                   LD   A,C
+022+  C5B5 07                   RLCA
+023+  C5B6 07                   RLCA
+024+  C5B7 07                   RLCA
+025+  C5B8 6F                   LD   L,A
+026+  C5B9 E6 38                AND  56
+027+  C5BB 2F                   CPL
+028+  C5BC 32 C1 C5             LD   (LAB+1),A
+029+  C5BF AF                   XOR  A
+030+  C5C0 CB C7       LAB      SET  0,A
+031+  C5C2 08                   EX   AF,AF'
+032+  C5C3 7D                   LD   A,L
+033+  C5C4 A8                   XOR  B
+034+  C5C5 E6 C7                AND  199
+035+  C5C7 A8                   XOR  B
+036+  C5C8 07                   RLCA
+037+  C5C9 07                   RLCA
+038+  C5CA 6F                   LD   L,A
+039+  C5CB 78                   LD   A,B
+040+  C5CC 92                   SUB  D
+041+  C5CD 06 00                LD   B,0
+042+  C5CF 30 03                JR   NC,N1
+043+  C5D1 ED 44                NEG
+044+  C5D3 04                   INC  B
+045+  C5D4 57          N1       LD   D,A
+046+  C5D5 79                   LD   A,C
+047+  C5D6 93                   SUB  E
+048+  C5D7 0E 00                LD   C,0
+049+  C5D9 30 03                JR   NC,N2
+050+  C5DB ED 44                NEG
+051+  C5DD 0C                   INC  C
+052+  C5DE 5F          N2       LD   E,A
+053+  C5DF 08                   EX   AF,AF'
+054+  C5E0 F5                   PUSH AF
+055+  C5E1 B6                   OR   (HL)
+056+  C5E2 77                   LD   (HL),A
+057+  C5E3 F1                   POP  AF
+058+  C5E4 08                   EX   AF,AF'
+059+  C5E5 B2                   OR   D
+060+  C5E6 C8                   RET  Z
+061+  C5E7 E5                   PUSH HL
+062+  C5E8 7A                   LD   A,D
+063+  C5E9 BB                   CP   E
+064+  C5EA 38 37                JR   C,POX
+065+  C5EC 21 47 C6             LD   HL,LEVO
+066+  C5EF CB 41                BIT  0,C
+067+  C5F1 28 03                JR   Z,Y1
+068+  C5F3 21 42 C6             LD   HL,DESNO
+069+  C5F6 22 16 C6    Y1       LD   (DIA+1),HL
+070+  C5F9 21 5F C6             LD   HL,GORE
+071+  C5FC CB 40                BIT  0,B
+072+  C5FE 28 03                JR   Z,Y2
+073+  C600 21 4C C6             LD   HL,DOLE
+074+  C603 22 19 C6    Y2       LD   (NAST+1),HL
+075+  C606 4A                   LD   C,D
+076+  C607 CB 39       N3       SRL  C
+077+  C609 DD 62                LD   HX,D
+078+  C60B 08                   EX   AF,AF'
+079+  C60C 47                   LD   B,A
+080+  C60D E1                   POP  HL
+081+  C60E 79          LOOP     LD   A,C
+082+  C60F 93                   SUB  E
+083+  C610 4F                   LD   C,A
+084+  C611 30 05                JR   NC,NAST
+085+  C613 82                   ADD  A,D
+086+  C614 4F                   LD   C,A
+087+  C615 CD 00 00    DIA      CALL 0
+088+  C618 CD 00 00    NAST     CALL 0
+089+  C61B 78                   LD   A,B
+090+  C61C B6                   OR   (HL)
+091+  C61D 77                   LD   (HL),A
+092+  C61E DD 25                DEC  HX
+093+  C620 20 EC                JR   NZ,LOOP
+094+  C622 C9                   RET
+095+  C623 21 47 C6    POX      LD   HL,LEVO
+096+  C626 CB 41                BIT  0,C
+097+  C628 28 03                JR   Z,X1
+098+  C62A 21 42 C6             LD   HL,DESNO
+099+  C62D 22 19 C6    X1       LD   (NAST+1),HL
+100+  C630 21 5F C6             LD   HL,GORE
+101+  C633 CB 40                BIT  0,B
+102+  C635 28 03                JR   Z,X2
+103+  C637 21 4C C6             LD   HL,DOLE
+104+  C63A 22 16 C6    X2       LD   (DIA+1),HL
+105+  C63D 4B                   LD   C,E
+106+  C63E 5A                   LD   E,D
+107+  C63F 51                   LD   D,C
+108+  C640 18 C5                JR   N3
+109+  C642 CB 08       DESNO    RRC  B
+110+  C644 D0                   RET  NC
+111+  C645 23                   INC  HL
+112+  C646 C9                   RET
+113+  C647 CB 00       LEVO     RLC  B
+114+  C649 D0                   RET  NC
+115+  C64A 2B                   DEC  HL
+116+  C64B C9                   RET
+117+  C64C 24          DOLE     INC  H
+118+  C64D 7C                   LD   A,H
+119+  C64E E6 07                AND  7
+120+  C650 C0                   RET  NZ
+121+  C651 7C                   LD   A,H
+122+  C652 D6 08                SUB  8
+123+  C654 67                   LD   H,A
+124+  C655 7D                   LD   A,L
+125+  C656 C6 20                ADD  A,32
+126+  C658 6F                   LD   L,A
+127+  C659 D0                   RET  NC
+128+  C65A 7C                   LD   A,H
+129+  C65B C6 08                ADD  A,8
+130+  C65D 67                   LD   H,A
+131+  C65E C9                   RET
+132+  C65F 25          GORE     DEC  H
+133+  C660 7C                   LD   A,H
+134+  C661 2F                   CPL
+135+  C662 E6 07                AND  7
+136+  C664 C0                   RET  NZ
+137+  C665 7C                   LD   A,H
+138+  C666 C6 08                ADD  A,8
+139+  C668 67                   LD   H,A
+140+  C669 7D                   LD   A,L
+141+  C66A D6 20                SUB  32
+142+  C66C 6F                   LD   L,A
+143+  C66D D0                   RET  NC
+144+  C66E 7C                   LD   A,H
+145+  C66F D6 08                SUB  8
+146+  C671 67                   LD   H,A
+147+  C672 C9                   RET
+148+  C673             	endmodule
+149+  C673             
+749   C673             	INCLUDE "cls.a80"
+001+  C673             	module cls
+002+  C673             CLS     
+003+  C673 AF                  xor  a
+004+  C674 D3 FE               out  (254),a
+005+  C676 21 FF 5A    		ld	hl, 5AFFh
+006+  C679 11 FE 5A    		ld	de, 5AFEh
+007+  C67C 01 FF 1A    		ld	bc, 1AFFh
+008+  C67F 77          		ld	(hl), a
+009+  C680 ED B8       		lddr			; Clear	videoram (black	screen)
+010+  C682 C9          		ret
+011+  C683                     
+012+  C683             	endmodule
+750   C683             	INCLUDE "iinkey.a80"
+001+  C683             	module iinkey
+002+  C683 CD 90 C6    ANYKEY   call IINKEY
+003+  C686 28 FB                jr   z,ANYKEY
+004+  C688 F5                   push af
+005+  C689 CD 90 C6    ANYKEY_0 call IINKEY
+006+  C68C 20 FB                jr   nz,ANYKEY_0
+007+  C68E F1                   pop  af
+008+  C68F C9                   ret
+009+  C690             ;------------------------------
+010+  C690 E5          IINKEY   push hl
+011+  C691 D5                   push de
+012+  C692 C5                   push bc
+013+  C693 01 FE 7F             ld   bc,#7FFE
+014+  C696 26 00                ld   h,0
+015+  C698 54                   ld   d,h
+016+  C699 5C                   ld   e,h
+017+  C69A 2E 05       II1      ld   l,5
+018+  C69C ED 78                in   a,(c)
+019+  C69E 24          II2      inc  h
+020+  C69F 0F                   rrca
+021+  C6A0 38 02                jr   c,II3
+022+  C6A2 53                   ld   d,e
+023+  C6A3 5C                   ld   e,h
+024+  C6A4 2D          II3      dec  l
+025+  C6A5 20 F7                jr   nz,II2
+026+  C6A7 CB 08                rrc  b
+027+  C6A9 38 EF                jr   c,II1
+028+  C6AB 7B                   ld   a,e
+029+  C6AC FE 24                cp   #24
+030+  C6AE 20 03                jr   nz,II5
+031+  C6B0 5A                   ld   e,d
+032+  C6B1 16 24                ld   d,#24
+033+  C6B3 FE 02       II5      cp   2
+034+  C6B5 20 03                jr   nz,II6
+035+  C6B7 5A                   ld   e,d
+036+  C6B8 16 02                ld   d,2
+037+  C6BA 21 DC C6    II6      ld   hl,IINN
+038+  C6BD AF                   xor  a
+039+  C6BE AA                   xor  d
+040+  C6BF 28 12                jr   z,II7
+041+  C6C1 21 2E C7             ld   hl,IISS
+042+  C6C4 FE 02                cp   2
+043+  C6C6 28 0B                jr   z,II7
+044+  C6C8 21 05 C7             ld   hl,IICS
+045+  C6CB FE 24                cp   #24
+046+  C6CD 28 04                jr   z,II7
+047+  C6CF 3E 01                ld   a,1
+048+  C6D1 18 04                jr   II8
+049+  C6D3             
+050+  C6D3 16 00       II7      ld   d,0
+051+  C6D5 19                   add  hl,de
+052+  C6D6 7E                   ld   a,(hl)
+053+  C6D7 A7          II8      and  a
+054+  C6D8 C1                   pop  bc
+055+  C6D9 D1                   pop  de
+056+  C6DA E1                   pop  hl
+057+  C6DB C9                   ret
+058+  C6DC             
+059+  C6DC 00 20 1C    IINN     defb 0," ",#1C
+060+  C6DF 6D 6E 62             defb "mnb"
+061+  C6E2 0D                   defb 13
+062+  C6E3 6C 6B 6A 68          defb "lkjh"
+063+  C6E7 706F697579           defb "poiuy"
+064+  C6EC 3039383736           defb "09876"
+065+  C6F1 3132333435           defb "12345"
+066+  C6F6 7177657274           defb "qwert"
+067+  C6FB 6173646667           defb "asdfg"
+068+  C700 00                   defb 0
+069+  C701 7A 78 63 76          defb "zxcv"
+070+  C705             
+071+  C705 00 11 0E    IICS     defb 0,#11,#0E
+072+  C708 4D 4E 42             defb "MNB"
+073+  C70B 02                   defb 2
+074+  C70C 4C 4B 4A 48          defb "LKJH"
+075+  C710 504F495559           defb "POIUY"
+076+  C715 0C0F090B0A           defb #0C,#0F,9,#0B,#0A
+077+  C71A 0706040508           defb 7,6,4,5,8
+078+  C71F 5157455254           defb "QWERT"
+079+  C724 4153444647           defb "ASDFG"
+080+  C729 1F                   defb #1F
+081+  C72A 5A 58 43 56          defb "ZXCV"
+082+  C72E             
+083+  C72E 00 10 1E    IISS     defb 0,16,#1E
+084+  C731 2E 2C 2A             defb ".,*"
+085+  C734 03                   defb 3
+086+  C735 3D 2B 2D 5E          defb "=+-^"
+087+  C739 22                   defb 34 ;"
+088+  C73A 3B 7F 7D 7B          defb ";}{"
+089+  C73E 5F29282726           defb "_)('&"
+090+  C743 2140232425           defb "!@#$%"
+091+  C748 12 13 14             defb #12,#13,#14
+092+  C74B 3C 3E                defb "<>"
+093+  C74D 7E 7C                defb "~|"
+094+  C74F 5C                   defb 92 ;\
+095+  C750 7B                   defb 123 ;{
+096+  C751 7D                   defb 125 ;}
+097+  C752 1D                   defb #1D
+098+  C753 3A 60 3F 2F          defb ":`?/"
+099+  C757             
+100+  C757             	endmodule
+751   C757             	INCLUDE "wait.a80"
+001+  C757             	module wait
+002+  C757             wait
+003+  C757             //	ex (SP),IX
+004+  C757             //	ex (SP),IX
+005+  C757 2B          	dec hl
+006+  C758 7C          	ld a,h
+007+  C759 BD          	cp l
+008+  C75A 20 FB       	jr nz,wait
+009+  C75C 10 F9       	djnz wait
+010+  C75E C9          	ret
+011+  C75F             
+012+  C75F             	endmodule
+752   C75F             //	INCLUDE "t42.a80"
+753   C75F             //	INCLUDE "txy.a80"
+754   C75F             	INCLUDE "txy51.a80"
+001+  C75F             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+002+  C75F             ; Poziciovy print 42*27 znakov ;
+003+  C75F             ;  + znakovy subor 6*7 bodov   ;
+004+  C75F             ; (vytvoreny pre disasembler)  ;
+005+  C75F             ; . -28.05.1988- Busy software ;
+006+  C75F             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+007+  C75F             ;DEMO:napiste:asm,dbg,rpp,g
+008+  C75F             //Original by BusySoft
+009+  C75F             	MODULE txy51
+010+  C75F 7E          txy	 	 ld   a,(hl)
+011+  C760 E6 7F                and  127
+012+  C762             /*         cp   13
+013+  C762                      jr   z,T42_ZMEN */
+014+  C762 FE 10                cp   16
+015+  C764 28 0B                jr	  z,colorchange
+016+  C766 E5                   push hl
+017+  C767 CD 79 C7             call xy
+018+  C76A E1                   pop  hl
+019+  C76B             /*         ld   a,(T42_BORE)
+020+  C76B~                     dec  a
+021+  C76B~                     cp   c
+022+  C76B~                     jr   c,T42_ZMEN
+023+  C76B                      inc  c */
+024+  C76B 7E          T42_BACK ld   a,(hl)
+025+  C76C 17                   rla
+026+  C76D D8                   ret  c
+027+  C76E 23                   inc  hl
+028+  C76F 18 EE                jr   txy
+029+  C771             
+030+  C771             colorchange
+031+  C771 23          			inc hl
+032+  C772 7E          			ld a,(hl)
+033+  C773 32 78 C7    			ld (T42_ATT),a
+034+  C776 18 F3       			jr T42_BACK	
+035+  C778 00          T42_ATT		defb 0	
+036+  C779             
+037+  C779             //exampleBusy
+038+  C779             /*
+039+  C779~            start	ld	hl,#4000
+040+  C779~            	ld	de,#4001
+041+  C779~            	ld	bc,#17ff
+042+  C779~            	ld	(hl),#00
+043+  C779~            	ldir
+044+  C779~            	ld	hl,#0202
+045+  C779~            	ld	(cursor),hl
+046+  C779~            	ld	hl,text
+047+  C779~            aaa	ld	a,(hl)
+048+  C779~            	call	xy
+049+  C779~            	inc	hl
+050+  C779~            	jr	nz,aaa
+051+  C779~            	ld	a,' '
+052+  C779~            bbb	ld	b,a
+053+  C779~            	call	xy
+054+  C779~            	ld	a,b
+055+  C779~            	inc	a
+056+  C779~            	cp	#80
+057+  C779~            	jr	c,bbb
+058+  C779~            	ld	hl,#2758
+059+  C779~            	exx
+060+  C779~            	ret
+061+  C779~            
+062+  C779~            text	db	'*** Rutina print'
+063+  C779~            		db	' 42*27 znakov v '
+064+  C779~            		db	'obraze ***'
+065+  C779~            		db	'        Priklad '
+066+  C779~            		db	'vypisu:         '
+067+  C779~            		db	'          '
+068+  C779~            		db	#00
+069+  C779             		*/
+070+  C779             ;main code
+071+  C779 A7          xy	and	a
+072+  C77A C8          	ret	z
+073+  C77B D9          	exx
+074+  C77C ED 4B 04 C8 	ld	bc,(cursor)
+075+  C780 11 0A C8    xy8	ld	de,znaky
+076+  C783 26 00       	ld	h,#00
+077+  C785 6F          	ld	l,a
+078+  C786 29          	add	hl,hl
+079+  C787 29          	add	hl,hl
+080+  C788 29          	add	hl,hl
+081+  C789 19          	add	hl,de
+082+  C78A E5          	push	hl
+083+  C78B FD E1       	pop	iy
+084+  C78D DD 26 08    	ld	xh,#08
+085+  C790 78          xy8dd	ld	a,b
+086+  C791 FE C0       	cp	#c0
+087+  C793 30 38       	jr	nc,xyend
+088+  C795             ;	call	#22b1
+089+  C795             
+090+  C795 A7          	and a
+091+  C796 1F          	rra
+092+  C797 37          	scf
+093+  C798 1F          	rra
+094+  C799 A7          	and a
+095+  C79A 1F          	rra
+096+  C79B A8          	xor b
+097+  C79C E6 F8       	and 248
+098+  C79E A8          	xor b
+099+  C79F 67          	ld h,a
+100+  C7A0 79          	ld a,c
+101+  C7A1 07          	rlca
+102+  C7A2 07          	rlca
+103+  C7A3 07          	rlca
+104+  C7A4 A8          	xor b
+105+  C7A5 E6 C7       	and 199
+106+  C7A7 A8          	xor b
+107+  C7A8 07          	rlca
+108+  C7A9 07          	rlca
+109+  C7AA 6F          	ld l,a
+110+  C7AB 79          	ld a,c
+111+  C7AC E6 07       	and 07
+112+  C7AE             
+113+  C7AE FD 56 00    	ld	d,(iy+#00)
+114+  C7B1 1E 00       	ld	e,#00
+115+  C7B3 28 07       	jr	z,xy8bb
+116+  C7B5 CB 1A       xy8cc	rr	d
+117+  C7B7 CB 1B       	rr	e
+118+  C7B9 3D          	dec	a
+119+  C7BA 20 F9       	jr	nz,xy8cc
+120+  C7BC 7A          xy8bb	ld	a,d
+121+  C7BD B6          	or	(hl)
+122+  C7BE 77          	ld	(hl),a
+123+  C7BF 23          	inc	hl
+124+  C7C0 7B          	ld	a,e
+125+  C7C1 B6          	or	(hl)
+126+  C7C2 77          	ld	(hl),a
+127+  C7C3 04          	inc	b
+128+  C7C4 FD 23       	inc	iy
+129+  C7C6 DD 25       	dec	xh
+130+  C7C8 20 C6       	jr	nz,xy8dd
+131+  C7CA CD EB C7    	call T51_COLOR
+132+  C7CD DD 21 00 C8 xyend	ld	ix,flag0
+133+  C7D1 DD 7E 04    	ld	a,(ix+#04)
+134+  C7D4 C6 05       	add	a,5
+135+  C7D6 DD 77 04    	ld	(ix+#04),a
+136+  C7D9 FE FD       	cp	255-2
+137+  C7DB 38 0C       	jr	c,xystop
+138+  C7DD DD 36 04 02 	ld	(ix+#04),2
+139+  C7E1 DD 7E 05    	ld	a,(ix+#05)
+140+  C7E4 C6 07       	add	a,7
+141+  C7E6 DD 77 05    	ld	(ix+#05),a
+142+  C7E9 D9          xystop	exx
+143+  C7EA C9          	ret
+144+  C7EB             
+145+  C7EB             T51_COLOR
+146+  C7EB 3A 78 C7    				ld a,(T42_ATT)
+147+  C7EE B7          				or a
+148+  C7EF C8          				ret z
+149+  C7F0             ; pokud je nula, tak se neobarvuje
+150+  C7F0 25          				dec h
+151+  C7F1 2D          				dec l
+152+  C7F2             
+153+  C7F2 7C          				ld a,h
+154+  C7F3 0F          				rrca
+155+  C7F4 0F          				rrca
+156+  C7F5 0F          				rrca
+157+  C7F6 E6 03       				and 3
+158+  C7F8 F6 58       				or 88
+159+  C7FA 67          				ld h,a
+160+  C7FB 3A 78 C7    				ld a,(T42_ATT)
+161+  C7FE 77          				ld (hl),a
+162+  C7FF C9          				ret
+163+  C800             ;systemove premenne:(pre disu)
+164+  C800             
+165+  C800 00          flag0	db	#00
+166+  C801 00          flag1	db	#00
+167+  C802 00          flag2	db	#00
+168+  C803 00          inp	db	#00
+169+  C804             
+170+  C804             cursor
+171+  C804 00          xxx	db	#00
+172+  C805 00          yyy	db	#00
+173+  C806 00 00       leni	dw	0
+174+  C808 00 00       adr	dw	0
+175+  C80A             
+176+  C80A             znaky
+177+  C80A              INCBIN zx51.ch6
+178+  D00A             
+179+  D00A             	ENDMODULE
+755   D00A             	INCLUDE "txy32.a80"
+001+  D00A             //LMN128-Jan Kucera-Zlin/CZ
+002+  D00A             //added OR Flag
+003+  D00A             //Original by BusySoft
+004+  D00A             	MODULE txy32
+005+  D00A 7E          txy	 	 ld   a,(hl)
+006+  D00B E6 7F                and  127
+007+  D00D             /*         cp   13
+008+  D00D                      jr   z,T42_ZMEN */
+009+  D00D FE 10                cp   16
+010+  D00F 28 0B                jr	  z,colorchange
+011+  D011 E5                   push hl
+012+  D012 CD 24 D0             call xy
+013+  D015 E1                   pop  hl
+014+  D016             /*         ld   a,(T42_BORE)
+015+  D016~                     dec  a
+016+  D016~                     cp   c
+017+  D016~                     jr   c,T42_ZMEN
+018+  D016                      inc  c */
+019+  D016 7E          T32_BACK ld   a,(hl)
+020+  D017 17                   rla
+021+  D018 D8                   ret  c
+022+  D019 23                   inc  hl
+023+  D01A 18 EE                jr   txy
+024+  D01C             
+025+  D01C             colorchange
+026+  D01C 23          			inc hl
+027+  D01D 7E          			ld a,(hl)
+028+  D01E 32 23 D0    			ld (T32_ATT),a
+029+  D021 18 F3       			jr T32_BACK	
+030+  D023 00          T32_ATT		defb 0	
+031+  D024             
+032+  D024 A7          xy	and	a
+033+  D025 C8          	ret	z
+034+  D026 D9          	exx
+035+  D027 ED 4B D0 D0 	ld	bc,(cursor)
+036+  D02B 11 0A C8    xy8	ld	de,boot.txy51.znaky
+037+  D02E 26 00       	ld	h,#00
+038+  D030 6F          	ld	l,a
+039+  D031 29          	add	hl,hl
+040+  D032 29          	add	hl,hl
+041+  D033 29          	add	hl,hl
+042+  D034 19          	add	hl,de
+043+  D035 E5          	push hl
+044+  D036 FD E1       	pop	iy
+045+  D038 DD 26 08    	ld	xh,#08
+046+  D03B 78          xy8dd	ld	a,b
+047+  D03C FE C0       	cp	#c0
+048+  D03E 30 48       	jr	nc,xyend
+049+  D040             ;	call	#22b1
+050+  D040             
+051+  D040 A7          	and a
+052+  D041 1F          	rra
+053+  D042 37          	scf
+054+  D043 1F          	rra
+055+  D044 A7          	and a
+056+  D045 1F          	rra
+057+  D046 A8          	xor b
+058+  D047 E6 F8       	and 248
+059+  D049 A8          	xor b
+060+  D04A 67          	ld h,a
+061+  D04B 79          	ld a,c
+062+  D04C 07          	rlca
+063+  D04D 07          	rlca
+064+  D04E 07          	rlca
+065+  D04F A8          	xor b
+066+  D050 E6 C7       	and 199
+067+  D052 A8          	xor b
+068+  D053 07          	rlca
+069+  D054 07          	rlca
+070+  D055 6F          	ld l,a
+071+  D056 79          	ld a,c
+072+  D057 E6 07       	and 07
+073+  D059             
+074+  D059 FD 56 00    	ld	d,(iy+#00)
+075+  D05C             //	ld	e,#00
+076+  D05C 28 48       	jr	z,xy8bbnew 		//kulata pozice, staci vypsat jen jeden atribut
+077+  D05E 1E 00       	ld e,0
+078+  D060 CB 1A       xy8cc rr	d
+079+  D062 CB 1B       	rr	e
+080+  D064 3D          	dec	a
+081+  D065 20 F9       	jr	nz,xy8cc   
+082+  D067             xy8bb
+083+  D067 3A D6 D0    	ld a,(orflag)
+084+  D06A A7          	and a
+085+  D06B 7A          	ld a,d
+086+  D06C 20 01       	jr nz,1F
+087+  D06E B6          	or	(hl)
+088+  D06F 77          1	ld	(hl),a
+089+  D070 CD B5 D0        call T32_COLOR
+090+  D073 23          	inc	hl
+091+  D074 3A D6 D0    	ld a,(orflag)
+092+  D077 A7          	and a
+093+  D078 7B          	ld a,e
+094+  D079 20 01       	jr nz,2F
+095+  D07B B6          	or	(hl)				
+096+  D07C 77          2	ld	(hl),a
+097+  D07D CD B5 D0        call T32_COLOR
+098+  D080 04          3	inc	b
+099+  D081 FD 23       	inc	iy
+100+  D083 DD 25       	dec	xh
+101+  D085             //    call T32_COLOR
+102+  D085 C2 3B D0    	jp	nz,xy8dd
+103+  D088             //	call T32_COLOR
+104+  D088 DD 21 CC D0 xyend	ld	ix,flag0
+105+  D08C DD 7E 04    	ld	a,(ix+#04)
+106+  D08F C6 08       	add	a,8
+107+  D091 DD 77 04    	ld	(ix+#04),a
+108+  D094 FE F8       	cp	255-7
+109+  D096 38 0C       	jr	c,xystop
+110+  D098 DD 36 04 02 	ld	(ix+#04),2
+111+  D09C DD 7E 05    	ld	a,(ix+#05)
+112+  D09F C6 08       	add	a,8
+113+  D0A1 DD 77 05    	ld	(ix+#05),a
+114+  D0A4 D9          xystop	exx
+115+  D0A5 C9          	ret
+116+  D0A6             xy8bbnew
+117+  D0A6 3A D6 D0    	ld a,(orflag)
+118+  D0A9 A7          	and a
+119+  D0AA 7A          	ld a,d
+120+  D0AB 20 01       	jr nz,4F
+121+  D0AD B6          	or (hl)
+122+  D0AE 77          4	ld (hl),a
+123+  D0AF CD B5 D0        call T32_COLOR
+124+  D0B2 23          	inc hl
+125+  D0B3 18 CB       	jr 3B
+126+  D0B5             	
+127+  D0B5 F5          T32_COLOR		push af
+128+  D0B6 3A 23 D0    				ld a,(T32_ATT)
+129+  D0B9 B7          				or a
+130+  D0BA C8          				ret z
+131+  D0BB E5          				push hl
+132+  D0BC             ; pokud je nula, tak se neobarvuje
+133+  D0BC             
+134+  D0BC             //				inc h
+135+  D0BC             //				inc l
+136+  D0BC             
+137+  D0BC 7C          				ld a,h
+138+  D0BD 0F          				rrca
+139+  D0BE 0F          				rrca
+140+  D0BF 0F          				rrca
+141+  D0C0 E6 03       				and 3
+142+  D0C2 F6 58       				or 88
+143+  D0C4 67          				ld h,a
+144+  D0C5 3A 23 D0    				ld a,(T32_ATT)
+145+  D0C8 77          				ld (hl),a
+146+  D0C9 E1          				pop hl
+147+  D0CA F1          				pop af
+148+  D0CB C9          				ret
+149+  D0CC             ;systemove premenne:(pre disu)
+150+  D0CC             
+151+  D0CC 00          flag0	db	#00
+152+  D0CD 00          flag1	db	#00
+153+  D0CE 00          flag2	db	#00
+154+  D0CF 00          inp	db	#00
+155+  D0D0             
+156+  D0D0             cursor
+157+  D0D0 00          xxx	db	#00
+158+  D0D1 00          yyy	db	#00
+159+  D0D2 00 00       leni	dw	0
+160+  D0D4 00 00       adr	dw	0
+161+  D0D6             
+162+  D0D6             
+163+  D0D6 01          orflag  db  #01
+164+  D0D7             //znaky
+165+  D0D7             // INCBIN zx51.ch6
+166+  D0D7             
+167+  D0D7             	ENDMODULE
+756   D0D7             	INCLUDE "sprite2.a80"
+001+  D0D7             ; zobrazi sprite dle cisla v A pozice a data spritu jsou v tabulce na adrese HL; priklad nakonci!!!
+002+  D0D7             ; nebo DE-pozice, HL-adresa (rutina OK)
+003+  D0D7             ; zobrazuje sprites z programu SpriteEdit typ 2
+004+  D0D7             	module sprite2
+005+  D0D7             SP_      
+006+  D0D7             ;        ld   hl,SP_TAB
+007+  D0D7 87                   add  a,a
+008+  D0D8 87                   add  a,a
+009+  D0D9 16 00                ld   d,0
+010+  D0DB 5F                   ld   e,a
+011+  D0DC 19                   add  hl,de
+012+  D0DD 5E                   ld   e,(hl)
+013+  D0DE 23                   inc  hl
+014+  D0DF 56                   ld   d,(hl)
+015+  D0E0 23                   inc  hl
+016+  D0E1 D5             			 push de
+017+  D0E2 5E                   ld   e,(hl)
+018+  D0E3 23                   inc  hl
+019+  D0E4 56                   ld   d,(hl)
+020+  D0E5 EB                   ex   de,hl
+021+  D0E6 D1                   pop de
+022+  D0E7                      
+023+  D0E7             
+024+  D0E7             ;------------------------------
+025+  D0E7             OK       
+026+  D0E7 46                    ld b,(hl)
+027+  D0E8 23          					inc hl
+028+  D0E9 4E                    ld c,(hl)
+029+  D0EA 23                    inc hl
+030+  D0EB 7A                   ld   a,d
+031+  D0EC 0F                   rrca
+032+  D0ED 0F                   rrca
+033+  D0EE 0F                   rrca
+034+  D0EF E6 E0                and  %11100000
+035+  D0F1 83                   add  a,e
+036+  D0F2 5F                   ld   e,a
+037+  D0F3 7A                   ld   a,d
+038+  D0F4 E6 18                and  24
+039+  D0F6 F6 40                or   64
+040+  D0F8 57                   ld   d,a
+041+  D0F9             
+042+  D0F9 D5          OK_SEM   push de
+043+  D0FA C5                   push bc
+044+  D0FB 7A                   ld   a,d
+045+  D0FC 0F                   rrca
+046+  D0FD 0F                   rrca
+047+  D0FE 0F                   rrca
+048+  D0FF E6 03                and  3
+049+  D101 F6 58                or   88
+050+  D103 57                   ld   d,a
+051+  D104             
+052+  D104             OK_RADE1 ;call DE_BAJT
+053+  D104 7E                    ld a,(hl)
+054+  D105 23                    inc hl
+055+  D106             
+056+  D106 12                   ld   (de),a
+057+  D107 1C                   inc  e
+058+  D108 0D                   dec  c
+059+  D109 20 F9                jr   nz,OK_RADE1
+060+  D10B C1                   pop  bc
+061+  D10C D1                   pop  de
+062+  D10D             
+063+  D10D D5          OK_DALSI push de
+064+  D10E C5                   push bc
+065+  D10F             OK_RADEK ;call DE_BAJT
+066+  D10F 7E                    ld a,(hl)
+067+  D110 23                    inc hl
+068+  D111             
+069+  D111 12                   ld   (de),a
+070+  D112 1C                   inc  e
+071+  D113 0D                   dec  c
+072+  D114 20 F9                jr   nz,OK_RADEK
+073+  D116 C1                   pop  bc
+074+  D117 D1                   pop  de
+075+  D118 14                   inc  d
+076+  D119 7A                   ld   a,d
+077+  D11A E6 07                and  7
+078+  D11C 20 EF                jr   nz,OK_DALSI
+079+  D11E 3E 20                ld   a,32
+080+  D120 83                   add  a,e
+081+  D121 5F                   ld   e,a
+082+  D122 3F                   ccf
+083+  D123 9F                   sbc  a,a
+084+  D124 E6 F8                and  -8
+085+  D126 82                   add  a,d
+086+  D127 57                   ld   d,a
+087+  D128 10 CF                djnz OK_SEM
+088+  D12A C9                   ret
+089+  D12B             
+090+  D12B             /*
+091+  D12B~            SP_TAB   defw #0B00  ;kam zobrazit
+092+  D12B~                     defw 32768 ;odkud
+093+  D12B~            
+094+  D12B~            
+095+  D12B             */
+096+  D12B             	endmodule
+757   D12B             MB03pluslogo
+758   D12B             	INCBIN "MB03+LOGOv2.bin"
+759   D90D             ultimatelogo	
+760   D90D             	INCBIN "ULTIMATE.bin"
+761   DA11             dots	
+762   DA11             //	INCBIN "DOTS.bin"	
+763   DA11             /*CaroLogo
+764   DA11             	INCBIN "CaroLogo.bin" */
+765   DA11             /*
+766   DA11~            NewdimLogo
+767   DA11~            	INCBIN "NewdimLogo.bin"
+768   DA11~            eightbc_i
+769   DA11~            	INCBIN "8BC_I.cde"
+770   DA11~            EasyLogoSmall
+771   DA11~            	INCBIN "EasyLogoSmall.bin"
+772   DA11             */	
+773   DA11             /*easyhdd	
+774   DA11~            	INCBIN "easyhdd.out"
+775   DA11             easyhddend*/
+776   DA11             /*
+777   DA11~            zvuk
+778   DA11~            	INCBIN "ZVUK.BIN"
+779   DA11~            zvukend
+780   DA11             */
+781   DA11             
+782   DA11             /*@SP_TAB
+783   DA11~            @TAB_sprite1
+784   DA11~            		 DEFB 10,4
+785   DA11~                     DEFW CaroLogo
+786   DA11~                     DEFB 24,20
+787   DA11~                     DEFW NewdimLogo
+788   DA11~                     defb 0,21
+789   DA11~                     defw eightbc_i
+790   DA11~                     defb 1,2
+791   DA11~                     defw eightbc_i
+792   DA11~                     defb 25,2
+793   DA11~                     defw EasyLogoSmall
+794   DA11             */		 
+795   DA11             ; --------------- T E X T---------------------------------------
+796   DA11             TEXT0 	 	dc 16,69,"LMN128-Jan Kucera-Zlin/CZ"
+796   DA11 10454C4D4E3132382D4A616E204B75636572612D5A6C696E2F43DA
+797   DA2C             TEXT4 		db 16,71,"1:",16,6,"MB02+(BSDOS308a+EH) ",16,71,"e:",16,6,"bs128Kreset"
+797   DA2C 1047313A10064D4230322B284253444F53333038612B454829201047653A1006
+797   DA4C 62733132384B7265736574
+798   DA57 A0          					dc " "
+799   DA58             TEXT2	 		db 16,71,"2:",16,6,"DivMMC  ",16,71,"@:",16,6,"DivIDE  "
+799   DA58 1047323A10064469764D4D4320201047403A10064469764944452020
+800   DA74 A0          					dc " "
+801   DA75             TEXT3    	db 16,71,"3:",16,6,"MB03+             ",16,71,"d:",16,7,"Devastace+ ",16,71,"t:",16,7,"diag ",16,71,"break:",16,7,"ZXROM  "
+801   DA75 1047333A10064D4230332B202020202020202020202020201047643A10074465
+801   DA95 766173746163652B201047743A100764696167201047627265616B3A10075A58
+801   DAB5 524F4D2020
+802   DABA A0          					dc " "
+803   DABB             TEXT1    	dc 16,69,"MB03+ Ultimate firmware 1.28"
+803   DABB 10454D4230332B20556C74696D617465206669726D7761726520312E32B8
+804   DAD9 10 42 20 20 STRIPS		db 16,66,32,32
+805   DADD 10 46 20 20 					db 16,70,32,32
+806   DAE1             					db 16,68,32,32,32,32,32
+806   DAE1 10442020202020
+807   DAE8             					dc 16,69,32,32,32,32,32+128
+807   DAE8 104520202020A0
+808   DAEF             ;TEXTTEST 	dc 16,6,"0123456789 128 WADHTUTTUU ZX Spectrum 128+2"
+809   DAEF             ;TEXTTEST2 dc 16,6,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwyxz"
+810   DAEF             HW1				db 16,67,"HARDWARE: "
+810   DAEF 104348415244574152453A20
+811   DAFB 1007332EB0  					dc 16,7,"3.0"
+812   DB00             HW2				db 16,3,"FPGA: "
+812   DB00 1003465047413A20
+813   DB08             					dc 16,7,"Xilinx SPARTAN 7 XC7S50/100 MHz"
+813   DB08 100758696C696E78205350415254414E2037205843375335302F313030204D48
+813   DB28 FA
+814   DB29             HW3				db 16,3,"RTC: "
+814   DB29 10035254433A20
+815   DB30             					dc 16,7,"Maxim DS3234"
+815   DB30 10074D6178696D204453333233B4
+816   DB3E             HW4				db 16,3,"SRAM: ",16,7,"8192 KBytes ",16,3,"FastSRAM: "
+816   DB3E 10035352414D3A20100738313932204B4279746573201003466173745352414D
+816   DB5E 3A20
+817   DB60             					dc 16,7,"4096 KBytes"
+817   DB60 100734303936204B42797465F3
+818   DB6D             HW5				db 16,3,"STORAGE: "
+818   DB6D 100353544F524147453A20
+819   DB78             					dc 16,7,"CompactFlash, 2x microSD"
+819   DB78 1007436F6D70616374466C6173682C203278206D6963726F53C4
+820   DB92             HW6				db 16,3,"OTHERS: "
+820   DB92 10034F54484552533A20
+821   DB9C             					dc 16,7,"USB, Wifi ESP8266, Matrix 8x8 LEDs"
+821   DB9C 10075553422C205769666920455350383236362C204D61747269782038783820
+821   DBBC 4C4544F3
+822   DBC0             
+823   DBC0             CONF1			db 16,67,"CONFIGURATION: "
+823   DBC0 1043434F4E46494755524154494F4E3A20
+824   DBD1 1007312EB9  					dc 16,7,"1.9"
+825   DBD6             CONF2			db 16,3,"3xAY: "
+825   DBD6 1003337841593A20
+826   DBDE             					db 16,7,"ON  ",16,3,"SounDrive: ",16,7,"ON  ",16,3,"SAA1099: ",16,7,"ON  ",16,3,"Gen.Sound:"
+826   DBDE 10074F4E20201003536F756E44726976653A2010074F4E202010035341413130
+826   DBFE 39393A2010074F4E2020100347656E2E536F756E643A
+827   DC14 10 07 4F CE 					dc 16,7,"ON"
+828   DC18             CONF3			db 16,3,"DMA: "
+828   DC18 1003444D413A20
+829   DC1F             					db 16,7,"ON  ",16,3,"IDE: ",16,7,"ON  ",16,3,"SD: ",16,7,"ON  ",16,3,"RTC: ",16,7,"ON ",16,3,"Wifi: "
+829   DC1F 10074F4E202010034944453A2010074F4E2020100353443A2010074F4E202010
+829   DC3F 035254433A2010074F4E201003576966693A20
+830   DC52 10074F46C6  					dc 16,7,"OFF"
+831   DC57             ADVS1			db 16,6,"OnTime: " 
+831   DC57 10064F6E54696D653A20
+832   DC61 10 07 A0    				dc 16,7," "
+833   DC64             ADVS2			db 16,6,"Nmi:    "
+833   DC64 10064E6D693A20202020
+834   DC6E 10 07 A0    				dc 16,7," "
+835   DC71             ADVS3			db 16,6,"Reset:  "
+835   DC71 100652657365743A2020
+836   DC7B 10 07 A0    				dc 16,7," "
+837   DC7E             ADVS4			db 16,6,"Extra:  "
+837   DC7E 100645787472613A2020
+838   DC88 10 07 A0    				dc 16,7," "
+839   DC8B             ADVS5			db 16,6,"PowerUp:"
+839   DC8B 1006506F77657255703A
+840   DC95 10 07 A0    				dc 16,7," "				
+841   DC98             FW1				dc 16,0,"FW:1.28/"
+841   DC98 100046573A312E3238AF
+842   DCA2 10 00       DATE			db 16,0
+843   DCA4             	LUA ALLPASS
+844   DCA4~            	_pc('db	"' .. os.date("%Y%m%d") .. '"') 
+845   DCA4             db	"20190729"
+845   DCA4 3230313930373239
+845   DCAC             	ENDLUA
+846   DCAC A0          	dc " " 
+847   DCAD             		//block 8 // kompenzace delky souboru kvuli os.date
+848   DCAD             endramcode			
+849   DCAD             		
+850   DCAD             	savesna "boot.sna",ramcode  //maincode//ramcode	
+851   DCAD             	ENDMODULE	
 
 Value    Label
 ------ - -----------------------------------------------------------
-0xBF8C   boot.moveend
 0x000B   boot.DMA
 0x00FE   boot.ULA
 0xEA60 X boot.zvukcompile
@@ -1504,123 +1668,133 @@ Value    Label
 0x0056 X boot.endramtest
 0x0064   boot.ramcodeinrom
 0xC064   boot.ramcode
-0xFD61   boot.endramcode
-0xC521   boot.cls.CLS
-0xCF84   boot.txy32.orflag
-0xCED1   boot.txy32.T32_ATT
-0xC19F   boot.fall1
-0xC53E   boot.iinkey.IINKEY
-0xC266   boot.skipanim
-0xC1B0   boot.fall2
-0xC1C1   boot.fall3
-0xC1D2   boot.fall4
-0xC15A   boot.wide1
-0xC605   boot.wait.wait
-0xFB6F   boot.STRIPS
-0xCF7E   boot.txy32.cursor
-0xCEB8   boot.txy32.txy
-0xC230   boot.follow1
-0xCED2   boot.txy32.xy
-0xC20D   boot.singledot
-0xC1E3   boot.halfdot
-0xC1F1   boot.halfdot3
-0xC1FF   boot.halfdot4
-0xD7BB   boot.ultimatelogo
-0xCF95   boot.sprite2.OK
-0xD8BF   boot.dots
-0xCFD9   boot.MB03pluslogo
-0xC44F   boot.draw_jugo.DRAW
-0xC6B2   boot.txy51.cursor
-0xFAD3   boot.TEXT0
-0xC60D   boot.txy51.txy
-0xFAEE   boot.TEXT3
-0xFB40   boot.TEXT2
-0xFD4C   boot.FW1
-0xFD56   boot.DATE
-0xFBE8   boot.HW1
-0xFBF9   boot.HW2
-0xFC24   boot.HW3
-0xFC39   boot.HW4
-0xFC69   boot.HW5
-0xFC8E   boot.HW6
-0xFCBC   boot.CONF1
-0xFCD2   boot.CONF2
-0xFD0D   boot.CONF3
-0xD8BF   boot.easyhdd
-0xFAD3   boot.easyhddend
-0xC3F8   boot.div_erase
-0xC438   boot.div_erase2
-0xC46E   boot.draw_jugo.LAB
-0xC482   boot.draw_jugo.N1
-0xC48C   boot.draw_jugo.N2
-0xC4D1   boot.draw_jugo.POX
-0xC4F5   boot.draw_jugo.LEVO
-0xC4A4   boot.draw_jugo.Y1
-0xC4F0   boot.draw_jugo.DESNO
-0xC4C3   boot.draw_jugo.DIA
-0xC50D   boot.draw_jugo.GORE
-0xC4B1   boot.draw_jugo.Y2
-0xC4FA   boot.draw_jugo.DOLE
-0xC4C6   boot.draw_jugo.NAST
-0xC4B5   boot.draw_jugo.N3
-0xC4BC   boot.draw_jugo.LOOP
-0xC4DB   boot.draw_jugo.X1
-0xC4E8   boot.draw_jugo.X2
-0xC531   boot.iinkey.ANYKEY
-0xC537   boot.iinkey.ANYKEY_0
-0xC548   boot.iinkey.II1
-0xC54C   boot.iinkey.II2
-0xC552   boot.iinkey.II3
-0xC561   boot.iinkey.II5
-0xC568   boot.iinkey.II6
-0xC58A   boot.iinkey.IINN
-0xC581   boot.iinkey.II7
-0xC5DC   boot.iinkey.IISS
-0xC5B3   boot.iinkey.IICS
-0xC585   boot.iinkey.II8
-0xC61F   boot.txy51.colorchange
-0xC627   boot.txy51.xy
-0xC619   boot.txy51.T42_BACK
-0xC626   boot.txy51.T42_ATT
-0xC62E X boot.txy51.xy8
-0xC6B8   boot.txy51.znaky
-0xC63E   boot.txy51.xy8dd
-0xC67B   boot.txy51.xyend
-0xC66A   boot.txy51.xy8bb
-0xC663   boot.txy51.xy8cc
-0xC699   boot.txy51.T51_COLOR
-0xC6AE   boot.txy51.flag0
-0xC697   boot.txy51.xystop
-0xC6AF X boot.txy51.flag1
-0xC6B0 X boot.txy51.flag2
-0xC6B1 X boot.txy51.inp
-0xC6B2 X boot.txy51.xxx
-0xC6B3 X boot.txy51.yyy
-0xC6B4 X boot.txy51.leni
-0xC6B6 X boot.txy51.adr
-0xCECA   boot.txy32.colorchange
-0xCEC4   boot.txy32.T32_BACK
-0xCED9 X boot.txy32.xy8
-0xCEE9   boot.txy32.xy8dd
-0xCF36   boot.txy32.xyend
-0xCF54   boot.txy32.xy8bbnew
-0xCF0E   boot.txy32.xy8cc
-0xCF15 X boot.txy32.xy8bb
-0xCF63   boot.txy32.T32_COLOR
-0xCF7A   boot.txy32.flag0
-0xCF52   boot.txy32.xystop
-0xCF7B X boot.txy32.flag1
-0xCF7C X boot.txy32.flag2
-0xCF7D X boot.txy32.inp
-0xCF7E X boot.txy32.xxx
-0xCF7F X boot.txy32.yyy
-0xCF80 X boot.txy32.leni
-0xCF82 X boot.txy32.adr
-0xCF85 X boot.sprite2.SP_
-0xCFA7   boot.sprite2.OK_SEM
-0xCFB2   boot.sprite2.OK_RADE1
-0xCFBB   boot.sprite2.OK_DALSI
-0xCFBD   boot.sprite2.OK_RADEK
-0xFB22 X boot.TEXT1
-0xFB85 X boot.TEXTTEST
-0xFBB2 X boot.TEXTTEST2
+0xDCAD   boot.endramcode
+0xC673   boot.cls.CLS
+0xD0D6   boot.txy32.orflag
+0xD023   boot.txy32.T32_ATT
+0xC196   boot.fall1
+0xC690   boot.iinkey.IINKEY
+0xC25D   boot.skipanim
+0xC1A7   boot.fall2
+0xC1B8   boot.fall3
+0xC1C9   boot.fall4
+0xC151   boot.wide1
+0xC757   boot.wait.wait
+0xC227   boot.follow1
+0xD0D0   boot.txy32.cursor
+0xD024   boot.txy32.xy
+0xC204   boot.singledot
+0xC1DA   boot.halfdot
+0xC1E8   boot.halfdot3
+0xC1F6   boot.halfdot4
+0xD90D   boot.ultimatelogo
+0xD0E7   boot.sprite2.OK
+0xDA11   boot.dots
+0xD12B   boot.MB03pluslogo
+0xDAD9   boot.STRIPS
+0xD00A   boot.txy32.txy
+0xC5A1   boot.draw_jugo.DRAW
+0xC804   boot.txy51.cursor
+0xDA11   boot.TEXT0
+0xC75F   boot.txy51.txy
+0xDA2C   boot.TEXT4
+0xDA75   boot.TEXT3
+0xDA58   boot.TEXT2
+0xDC98   boot.FW1
+0xDCA2   boot.DATE
+0xDAEF   boot.HW1
+0xDB00   boot.HW2
+0xDB29   boot.HW3
+0xDB3E   boot.HW4
+0xDB6D   boot.HW5
+0xDB92   boot.HW6
+0xDBC0   boot.CONF1
+0xDBD6   boot.CONF2
+0xDC18   boot.CONF3
+0xC468   boot.div_erase
+0xDC57   boot.ADVS1
+0xC570   boot.NUMBER4
+0xDC64   boot.ADVS2
+0xDC71   boot.ADVS3
+0xDC7E   boot.ADVS4
+0xDC8B   boot.ADVS5
+0xC683   boot.iinkey.ANYKEY
+0xC559   boot.div_erase2
+0xC58E   boot.NUM_JED
+0xC576 X boot.NUMBER3
+0xC57C X boot.NUMBER2
+0xC582 X boot.NUMBER1
+0xC588 X boot.NUMBER0
+0xC779   boot.txy51.xy
+0xC58F   boot.NUM_JED1
+0xC595   boot.NUM_PRIC
+0xC5C0   boot.draw_jugo.LAB
+0xC5D4   boot.draw_jugo.N1
+0xC5DE   boot.draw_jugo.N2
+0xC623   boot.draw_jugo.POX
+0xC647   boot.draw_jugo.LEVO
+0xC5F6   boot.draw_jugo.Y1
+0xC642   boot.draw_jugo.DESNO
+0xC615   boot.draw_jugo.DIA
+0xC65F   boot.draw_jugo.GORE
+0xC603   boot.draw_jugo.Y2
+0xC64C   boot.draw_jugo.DOLE
+0xC618   boot.draw_jugo.NAST
+0xC607   boot.draw_jugo.N3
+0xC60E   boot.draw_jugo.LOOP
+0xC62D   boot.draw_jugo.X1
+0xC63A   boot.draw_jugo.X2
+0xC689   boot.iinkey.ANYKEY_0
+0xC69A   boot.iinkey.II1
+0xC69E   boot.iinkey.II2
+0xC6A4   boot.iinkey.II3
+0xC6B3   boot.iinkey.II5
+0xC6BA   boot.iinkey.II6
+0xC6DC   boot.iinkey.IINN
+0xC6D3   boot.iinkey.II7
+0xC72E   boot.iinkey.IISS
+0xC705   boot.iinkey.IICS
+0xC6D7   boot.iinkey.II8
+0xC771   boot.txy51.colorchange
+0xC76B   boot.txy51.T42_BACK
+0xC778   boot.txy51.T42_ATT
+0xC780 X boot.txy51.xy8
+0xC80A   boot.txy51.znaky
+0xC790   boot.txy51.xy8dd
+0xC7CD   boot.txy51.xyend
+0xC7BC   boot.txy51.xy8bb
+0xC7B5   boot.txy51.xy8cc
+0xC7EB   boot.txy51.T51_COLOR
+0xC800   boot.txy51.flag0
+0xC7E9   boot.txy51.xystop
+0xC801 X boot.txy51.flag1
+0xC802 X boot.txy51.flag2
+0xC803 X boot.txy51.inp
+0xC804 X boot.txy51.xxx
+0xC805 X boot.txy51.yyy
+0xC806 X boot.txy51.leni
+0xC808 X boot.txy51.adr
+0xD01C   boot.txy32.colorchange
+0xD016   boot.txy32.T32_BACK
+0xD02B X boot.txy32.xy8
+0xD03B   boot.txy32.xy8dd
+0xD088   boot.txy32.xyend
+0xD0A6   boot.txy32.xy8bbnew
+0xD060   boot.txy32.xy8cc
+0xD067 X boot.txy32.xy8bb
+0xD0B5   boot.txy32.T32_COLOR
+0xD0CC   boot.txy32.flag0
+0xD0A4   boot.txy32.xystop
+0xD0CD X boot.txy32.flag1
+0xD0CE X boot.txy32.flag2
+0xD0CF X boot.txy32.inp
+0xD0D0 X boot.txy32.xxx
+0xD0D1 X boot.txy32.yyy
+0xD0D2 X boot.txy32.leni
+0xD0D4 X boot.txy32.adr
+0xD0D7 X boot.sprite2.SP_
+0xD0F9   boot.sprite2.OK_SEM
+0xD104   boot.sprite2.OK_RADE1
+0xD10D   boot.sprite2.OK_DALSI
+0xD10F   boot.sprite2.OK_RADEK
+0xDABB X boot.TEXT1
