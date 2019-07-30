@@ -1,0 +1,153 @@
+//Original by BusySoft
+	MODULE xdec_06
+;Prevod bin->dec bez znamienka
+; in: bin
+;out: dec
+z 
+bindec      ld   hl,zzdec            ;Vynulovanie buffera dec
+            ld   bc,lldec*#0100
+cls1        ld   (hl),c
+            inc  hl
+            djnz cls1
+            ld   c,8*llbin           ;Opakuj pre kazdy bit bin:
+bndc0       call binx2               ;vyrotovanie bitu z bin
+            ld   hl,eedec
+            ld   b,lldec             ;a zarotovanie toho bitu do dec
+bndc2       dec  hl
+            ld   a,(hl)
+            adc  a,a
+            cp   #0a
+            jr   c,bndc3
+            sub  #0a
+bndc3       ld   (hl),a
+            ccf
+            djnz bndc2
+            dec  c
+            jr   nz,bndc0
+            ret
+
+;Prevod dec->bin bez znamienka
+; in: dec
+;out: bin
+ 
+decbin      ld   hl,zzbin           ; Vynulovanie bin
+            ld   bc,llbin*#0100
+cls2        ld   (hl),c
+            inc  hl
+            djnz cls2                ;Vynasobenie bin desiatimi,
+            ld   ix,zzdec            ;a to takto:
+            ld   c,lldec             ;Najprv to vynasobime dvomi
+dcbn0       call binx2
+            ld   hl,zzbin
+            ld   de,zzbuf            ;Potom to presunieme
+            ld   b,llbin             ;do pomocneho buffera
+dcbn1       ld   a,(hl)
+            ld   (de),a
+            inc  hl
+            inc  de
+            djnz dcbn1
+            call binx2               ;Vynasobime styrmi
+            call binx2               ;(cize dva krat dvomi)
+            ld   hl,zzbin
+            ld   de,zzbuf
+            ld   b,llbin             ;A potom k tomu pripocitame
+            xor  a                   ;to z pomocneho buffera
+dcbn2       ld   a,(de)
+            adc  a,(hl)
+            ld   (hl),a
+            inc  de
+            inc  hl
+            djnz dcbn2               ;A je to.
+            ld   hl,zzbin
+            ld   b,llbin-1           ;Este pripocitame
+            ld   a,(ix+#00)          ;jednu cislicu z dec
+            add  a,(hl)
+            ld   (hl),a
+dcbn3       inc  hl
+            ld   a,#00
+            adc  a,(hl)
+            ld   (hl),a
+            djnz dcbn3
+            inc  ix
+            dec  c                   ;a opakujeme pre
+            jr   nz,dcbn0            ;kazdu cislicu z dec
+            ret
+ 
+;Nejake podprogramy
+ 
+binx2       ld   hl,zzbin            ;Nasobenie bin dvomi
+            ld   b,llbin
+            xor  a
+bnxx2       rl   (hl)
+            inc  hl
+            djnz bnxx2
+            ret
+
+binneg      ld   hl,zzbin            ;Negacia bin
+            ld   b,llbin
+            scf
+bnngx       ld   a,(hl)
+            cpl
+            adc  a,#00
+            ld   (hl),a
+            inc  hl
+            djnz bnngx
+            ret
+ 
+;Prevod bin-dec so znamienkom
+; in: bin v doplnkovom formate
+;out: dec + znamienko
+ 
+zbndec      ld   a,(eebin-1)
+            bit  7,a                 ;znamienkovy bit
+            ld   a,'+'
+            jr   z,zbn1
+            call binneg
+            ld   a,'-'
+zbn1        ld   (sign),a            ;zapis znamienka
+            jp   bindec
+ 
+;Prevod dec->bin so znamienkom
+; in: dec + znamienko
+;out: bin v doplnkovom formate
+ 
+zdcbin      call decbin
+            ld   a,(sign)
+            cp   '-'                 ;Ak to nie minus,
+            ret  nz                  ;tak nic
+            jr   binneg              ;ak je minus, tak negacia
+ 
+k
+l      =    k-z
+;       org  #6000
+ 
+;Buffery systemu - pre ulozenie vstupov a vystupov rutiniek
+ 
+;BIN ... binarna hodnota cisla
+;        najprv ide nizsi bajt
+;        a po nom vyssie bajty
+ 
+zzbin  db   #ff,#ff,#ff,#ff
+eebin
+llbin  =    eebin-zzbin
+ 
+;DEC ... postupnost desiatkovych cislic
+;        najprv idu najvyssie rady
+;        a po nich nizsie desiatkove rady
+; Dlzka buffera musi byt taka aby sa do nej mestilo cislo z bin
+; V pripade prevodov so znamienkom sa pouziva aj znamienko
+ 
+sign   db   '+'
+zzdec  db   0,0,0,0,0
+ 
+       db   6,5,5,3,5
+ 
+eedec
+lldec  =    eedec-zzdec
+ 
+;Pomocny buffer pouzity pre nasobenie desiatimi,
+;struktura dat taka ista ako BIN
+ 
+zzbuf  db   #55,#55,#55,#55
+eebuf
+	ENDMODULE

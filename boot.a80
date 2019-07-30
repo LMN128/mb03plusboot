@@ -1,6 +1,6 @@
 	MODULE 	boot
 	DEVICE 	ZXSPECTRUM48
-	OUTPUT	boot.cod
+	OUTPUT	boot.cde
 	/*
 ; ███████████████ M O V E  T O  S R A M ███████████████████████████████████████	
 			org 49000
@@ -483,30 +483,48 @@ skipanim
 2			
 			cp '1'					//key 1
 			jr nz,3F
-			ld a,129				; install bsrom from "rom"
-			out (23),a
+			ld b,6					//number of pages to transfer					
+22			push bc
+			xor a
+			ld bc,#203B					//ZXi portselect
+			out (c),a
+			ld bc,#213B
+			ld a,255					//HW - FF - Firmware
+			out (c),a
+			xor a
+			out (#27),a
+			out (#67),a
+			pop bc
+			push bc
+			ld a,8						;first Flash block
+			dec b
+			add a,b	
+			add a,b						;multiplication by 2									
+			out (#07),a
+			inc a
+			out (#47),a
+
 			ld hl,0
 			ld de,32768
 			ld bc,16384
 			ldir
-			ld a,96
+
+			ld bc,#213B
+			ld a,1						//HW - 1 - MB02+
+			out (c),a
+			pop bc
+			push bc
+			ld a,96						;first MB02+ RAM
+			dec b
+			add a,b
 			out (23), a
 			ld hl,32768
 			ld de,0
 			ld bc,16384
 			ldir
-			ld a,130				; install bsrom from "rom"
-			out (23),a
-			ld hl,0
-			ld de,32768
-			ld bc,16384
-			ldir
-			ld a,97
-			out (23), a
-			ld hl,32768
-			ld de,0
-			ld bc,16384
-			ldir
+			pop bc
+			djnz 22B
+
 			ld a,64
 			out (23),a
 			jr 4F
@@ -557,12 +575,31 @@ skipanim
 			ld   BC,2047
 			ld   (HL),l
 			ldir
-			ld a,131
-			out (23),a
+
+			xor a
+			ld bc,#203B					//ZXi portselect
+			out (c),a
+			ld bc,#213B
+			ld a,255					//HW - FF - Firmware
+			out (c),a
+			xor a
+			out (#27),a
+			out (#67),a
+
+			ld a,20														
+			out (#07),a
+			inc a
+			out (#47),a
+
 			ld hl,0
 			ld de,27000
 			ld bc,6000
 			ldir
+
+			ld bc,#213B
+			ld a,1						//HW - 1 - MB02+
+			out (c),a
+			
 			ld a,64
 			out (23),a
 			jp 27000
@@ -573,7 +610,7 @@ skipanim
 			ld bc,#203B				//ZXi portselect
 			out (c),a
 			ld bc,#213B
-			ld a,255					//HW - FF - Firmware
+			ld a,255				//HW - FF - Firmware
 			out (c),a
 			xor a
 			out (#27),a
@@ -633,36 +670,147 @@ div_erase	out (#E3),a
 			out (c),a
 			ld a,#E0				//FRAM active
 			out (#53),a
+
 			ld	bc,#9000
 			ld	(txy51.cursor),bc
 			ld	hl,ADVS1
 			call txy51.txy
-			ld hl,(#3FFC)
-			call NUMBER4
+
+			ld hl,#3FFC
+			ld de,xdec_06.zzbin
+			ld bc,4
+			ldir
+			call xdec_06.bindec
+			ld b,10
+			ld c," "
+			ld hl,xdec_06.zzdec
+1			ld a,(hl)
+			add a,"0"
+			cp "0"
+			jr nz,3F
+			ld a,c			
+			jr 2F
+3			ld c,"0"			
+2			push hl
+			push bc
+			call txy51.xy
+			pop bc
+			pop hl
+			inc hl
+			djnz 1B
+
 			ld	bc,#9800
 			ld	(txy51.cursor),bc
 			ld	hl,ADVS2
 			call txy51.txy
-			ld hl,(#3FF8)
-			call NUMBER4
+
+			ld hl,#3FF8
+			ld de,xdec_06.zzbin
+			ld bc,4
+			ldir
+			call xdec_06.bindec
+			ld b,10
+			ld c," "
+			ld hl,xdec_06.zzdec
+1			ld a,(hl)
+			add a,"0"
+			cp "0"
+			jr nz,3F
+			ld a,c			
+			jr 2F
+3			ld c,"0"			
+2			push hl
+			push bc
+			call txy51.xy
+			pop bc
+			pop hl
+			inc hl
+			djnz 1B
+
 			ld	bc,#A000
 			ld	(txy51.cursor),bc
 			ld	hl,ADVS3
 			call txy51.txy
-			ld hl,(#3FF4)
-			call NUMBER4
+
+			ld hl,#3FF4
+			ld de,xdec_06.zzbin
+			ld bc,4
+			ldir
+			call xdec_06.bindec
+			ld b,10
+			ld c," "
+			ld hl,xdec_06.zzdec
+1			ld a,(hl)
+			add a,"0"
+			cp "0"
+			jr nz,3F
+			ld a,c			
+			jr 2F
+3			ld c,"0"			
+2			push hl
+			push bc
+			call txy51.xy
+			pop bc
+			pop hl
+			inc hl
+			djnz 1B
+
 			ld	bc,#A800
 			ld	(txy51.cursor),bc
 			ld	hl,ADVS4
 			call txy51.txy
-			ld hl,(#3FF0)
-			call NUMBER4
+
+			ld hl,#3FF0
+			ld de,xdec_06.zzbin
+			ld bc,4
+			ldir
+			call xdec_06.bindec
+			ld b,10
+			ld c," "
+			ld hl,xdec_06.zzdec
+1			ld a,(hl)
+			add a,"0"
+			cp "0"
+			jr nz,3F
+			ld a,c			
+			jr 2F
+3			ld c,"0"			
+2			push hl
+			push bc
+			call txy51.xy
+			pop bc
+			pop hl
+			inc hl
+			djnz 1B
+
 			ld	bc,#B000
 			ld	(txy51.cursor),bc
 			ld	hl,ADVS5
 			call txy51.txy
-			ld hl,(#3FEC)
-			call NUMBER4
+
+			ld hl,#3FEC
+			ld de,xdec_06.zzbin
+			ld bc,4
+			ldir
+			call xdec_06.bindec
+			ld b,10
+			ld c," "
+			ld hl,xdec_06.zzdec
+1			ld a,(hl)
+			add a,"0"
+			cp "0"
+			jr nz,3F
+			ld a,c			
+			jr 2F
+3			ld c,"0"			
+2			push hl
+			push bc
+			call txy51.xy
+			pop bc
+			pop hl
+			inc hl
+			djnz 1B
+
 //carymary2
 			ld bc,#B800
 			ld	(txy32.cursor),bc
@@ -754,6 +902,7 @@ NUM_PRIC sbc  hl,de
 	INCLUDE "txy51.a80"
 	INCLUDE "txy32.a80"
 	INCLUDE "sprite2.a80"
+	INCLUDE "xdec_06.a80"
 MB03pluslogo
 	INCBIN "MB03+LOGOv2.bin"
 ultimatelogo	
@@ -839,6 +988,7 @@ ADVS4			db 16,6,"Extra:  "
 ADVS5			db 16,6,"PowerUp:"
 				dc 16,7," "				
 FW1				dc 16,0,"FW:1.28/"
+TESTNUMBER		db 255,255,1,0
 DATE			db 16,0
 	LUA ALLPASS
 	_pc('db	"' .. os.date("%Y%m%d") .. '"') 
