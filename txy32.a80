@@ -105,7 +105,7 @@ xyend	ld	ix,flag0
 	ld	a,(ix+#04)
 	add	a,8
 	ld	(ix+#04),a
-	cp	255-7
+	cp	256-7
 	jr	c,xystop
 	ld	(ix+#04),2
 	ld	a,(ix+#05)

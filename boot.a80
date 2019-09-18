@@ -1,120 +1,40 @@
 	MODULE 	boot
 	DEVICE 	ZXSPECTRUM48
 	OUTPUT	boot.cde
-	/*
-; ███████████████ M O V E  T O  S R A M ███████████████████████████████████████	
-			org 49000
-			di
-			xor a
-			out (23),a
-			ld bc,#203B				//ZXi portselect
-			out (c),a
-			ld bc,#213B
-			ld a,1					//HW - 1 - MB03+
-			out (c),a
-			ld a, 160
-			out (23),a
-			ld hl,49152
-			ld de,0
-			ld bc,16384
-			ldir
-			ld a,128
-			out (23),a
-			rst 0
-moveend			
-	BLOCK   (49152-moveend),0
-*/	
-; --------------- V A R I A B L E S ---------------------------------------			
+	
+;███████████████ V A R I A B L E S ██████████████████████████████████████		
 DMA 		equ #0B
 ULA			equ #FE
-zvukcompile	equ 60000 ; adresa zkopilovaneho zvuku 
-; --------------- M A I N C O D E ---------------------------------------
-			org 49152
-			
+;███████████████ M A I N  C O D E ███████████████████████████████████████	
+			org 49152		
 maincode
-			
-//			org 0
 			DISP 0
 boot		di
-				ld sp,0
-				ld	a, #C3		; Z80DMA command: WR6: Reset
-				out	(DMA), a
-				xor	a
-				ld	i, a
-				out (ULA),a
-				ld	hl, 5AFFh
-				ld	de, 5AFEh
-				ld	bc, 1AFFh
-				ld	(hl), a
-				lddr			; Clear	videoram (black	screen)				
-	INCLUDE "effect.a80"		; Busy nonbootdisk effect
-/*				
-			ld bc, 203Bh		; ZXi portselect
-			out (c),a
-			ld a,8				; dissable monsterblaster till bsdos uses port 0Fh
-			ld bc, 213Bh		; ZXi port0 - Audio
-			out (c),a	
-*/			
-/*			in	a, (ULA)
+			ld sp,0
+			im 1
+;			ld	a, #C3				; Z80DMA command: WR6: Reset
+;			out	(DMA), a
+			xor	a
+			ld	i, a
+			out (ULA),a
+			ld	hl, 5AFFh
+			ld	de, 5AFEh
+			ld	bc, 1AFFh
+			ld	(hl), a
+			lddr					; Clear	videoram (black	screen)	
+			in	a, (254)
 			cpl
 			and	1Fh
-			jr  z,endramtest	;testram if anykey
-;			jr endramtest
-; ███████████████ RAM TEST ███████████████████████████████████████
-;it's comes from legacy MB02+ bootloader version 003
-
-ramtest xor a					
-		ld 	hl, #4000
-		ld	de, #0608
-		ld	bc, 32765
-		out	(c), a
-
-ram_test_loop:								
-		cpl
-		ld	(hl), a
-		xor	(hl)
-		ld	(hl), a
-		xor	(hl)
-		jr	nz, ram_fault
-		inc	l
-		jr	nz, ram_test_loop
-		inc	h
-		jr	nz, ram_test_loop
-		ld	h, #C0				; RAM pages start address
-		ld	a, e
-		cp	d
-		jr	nz, no_page5		; Don't test RAM page 5 again
-		dec	e
-
-no_page5:				
-		cp	3					; Don't test RAM page 2 again
-		jr	nz, no_page2
-		dec	e
-
-no_page2:				
-		xor	a
-		dec	e
-		out	(c), e
-		jr	nz, ram_test_loop
-;endtest
-		jr endramtest
-
-ram_fault:				
-		ld	a, e
-		out	(254), a
-
-delay1:					
-		djnz	$
-		cpl
-		out	(254), a
-		ld	b, 7
-
-delay2:					
-		djnz	$
-		jr	ram_fault			
-; ███████████████ E N D  R A M  T E S T ███████████████████████████████████████			
-*/			
-skipramtest			
+			jr  nz,endramtest		;skip Busy effect
+			jr boot2
+			db "LMN128"
+//WARNING max #38 bytes!!!!			
+endboot		BLOCK #38-endboot,0
+;			DISP #38
+im1			ei
+			ret					
+boot2
+	INCLUDE "effect.a80"			; Busy nonbootdisk effect
 
 endramtest	ld hl,ramcodeinrom
 			ld de,ramcode
@@ -127,15 +47,14 @@ ramcodeinrom
 			ent						; restore address to compile to right place
 ramcode		
 			di						; for sna test
-			ld sp,0				; for sna test
-; temporary switch to MB02+ machine			
+			ld sp,0					; for sna test
+; temporary switch to MB02+ machine for testing and NMI enable			
 			xor a
 			ld bc,#203B				//ZXi portselect
 			out (c),a
 			ld bc,#213B
 			ld a,1					//HW - 1 - MB02+
 			out (c),a
-
 			call cls.CLS
 			ld   a,7
 			ld   HL,22528
@@ -143,6 +62,8 @@ ramcode
 			ld   BC,767
 			ld   (HL),a
 			ldir
+				call iinkey.IINKEY		; waiting for key
+				jp nz,skipanim
 			ld a,0
 			ld (txy32.orflag),a
 			ld a,66
@@ -341,7 +262,7 @@ singledot	ld	(txy32.cursor),bc
 
 follow1		ld de,#050F
 	        ld hl,ultimatelogo
-			ld a,13			// number of sprites in animations
+			ld a,13				// number of sprites in animations
 1			push af
 			push de
 			push hl
@@ -356,10 +277,10 @@ follow1		ld de,#050F
 			pop af
 			dec a
 			jr nz,1B
-//Ultimate		
+/*//Ultimate		
 			ld de,#0500
 	        ld hl,dots+38*0
-			ld a,6			// number of sprites in animations
+			ld a,6				// number of sprites in animations
 2			push af
 			push de
 			push hl
@@ -372,15 +293,12 @@ follow1		ld de,#050F
 			inc e
 			pop af
 			dec a
-			jr nz,2B
+			jr nz,2B */
 skipanim			
 			ld de,#0000
-	    ld hl,MB03pluslogo
+	    	ld hl,MB03pluslogo
 			call sprite2.OK
-/*			ld de,#040A
-	        ld hl,CaroLogo
-			call sprite2.OK
-*/
+
 			ld hl, STRIPS
 			ld bc,#4800
 			ld	(txy32.cursor),bc
@@ -411,11 +329,11 @@ skipanim
 			ld	(txy51.cursor),bc
 			ld	hl,TEXT2
 			call txy51.txy
-			ld	bc,#9EB1
+			ld	bc,#9EB0
 			ld	(txy51.cursor),bc
 			ld	hl,FW1
 			call txy51.txy
-			ld	bc,#9ED9
+			ld	bc,#9ED8
 			ld	(txy51.cursor),bc
 			ld	hl,DATE
 			call txy51.txy		
@@ -456,33 +374,146 @@ skipanim
 			ld	bc,#9003
 			ld	(txy51.cursor),bc
 			ld	hl,CONF3
-//carymary2
-			call txy51.txy		
+			call txy51.txy
+		
+	
+//carymary2				
 			 ld bc,#A600
 			 ld de,#A6ff
 			 call draw_jugo.DRAW
 			
-/*			ld	bc,#9000
+			call cf.IDENT
+			ld	bc,#707B
 			ld	(txy51.cursor),bc
-			ld	hl,TEXTTEST2
-			call txy51.txy			
-*/			
-1			call iinkey.IINKEY		; waiting for key
+			jr nz,cferr
+;model
+			ld   hl,cf.BUFFER+54
+			ld   b,40
+			call cf.PROHOD
+			set  7,(ix+79)			
+cferr		call txy51.txy
+
+
+loopkey		
+1			
+			xor a
+			ld bc,#203B				//ZXi portselect
+			out (c),a
+			ld bc,#213B
+			dec a					//HW - FF firmware
+			out (c),a
+			ei
+/*			xor a
+			ld bc,#203B
+			out (c),a
+			ld bc,#273B
+			in a,(c)
+			cp h
+			ld h,a
+			push hl	*/
+			halt
+//			xor a
+//			out (254),a
+			di
+			xor a
+			ld bc,#203B				//ZXi portselect
+			out (c),a
+			ld bc,#213B
+			ld a,1					//HW - 1 MB02+
+			out (c),a	
+			call clock		
+			call iinkey.IINKEY		; waiting for key
+;			pop hl		
 			jr z,1B
-			cp 11h					; break
-			jr nz,2F				; no break
-			xor a					; break
-			out (23),a 				; dissable MB03+ SRAM
-									;ZX128+2A rom
-			ld bc,8189
+
+			cp "3"
+			jp nz,next1
+			call clean
+			ld bc,#B800
+			ld	(txy32.cursor),bc
+			LD HL, STRIPS
+			call txy32.txy
+			ld bc,#BF00
+			ld de,#BFFF
+			call draw_jugo.DRAW				
+/*			ld de,#0E00
+	        ld hl,EsxLogo
+			call sprite2.OK*/
+			ld	bc,#5808
+			ld	(txy51.cursor),bc
+			ld	hl,ULT1
+			call txy51.txy
+			ld	bc,#6008
+			ld	(txy51.cursor),bc
+			ld	hl,ULT2
+			call txy51.txy
+			ld	bc,#6808
+			ld	(txy51.cursor),bc
+			ld	hl,ULT3
+			call txy51.txy
+			ld	bc,#7808
+			ld	(txy51.cursor),bc
+			ld	hl,ULT4
+			call txy51.txy
+			ld	bc,#8008
+			ld	(txy51.cursor),bc
+			ld	hl,ULT5
+			call txy51.txy
+			ld	bc,#8808
+			ld	(txy51.cursor),bc
+			ld	hl,ULT6
+			call txy51.txy
+			ld	bc,#A008
+			ld	(txy51.cursor),bc
+			ld	hl,ULT7
+			call txy51.txy
+			ld	bc,#A808
+			ld	(txy51.cursor),bc
+			ld	hl,ULT8
+			call txy51.txy											
+holdkey5	call iinkey.IINKEY
+			jr z,holdkey5			
+			jp ramcode
+
+next1		cp 11h					; break
+			jr nz,2F				; no break	
+			xor a
+			ld bc,#203B				//ZXi portselect
 			out (c),a
-			
-			ld bc,32765				; ZX128 rom0 
+			ld bc,#213B
+									//HW - 0
+			out (c),a									
+			ld bc,8189				;ZX128+2A rom
+			out (c),a			
+			ld bc,32765				;ZX128 rom0 
 			out (c),a
-			rst 0					; jp to 0
+			ld i,a
+			im 0
+			dec a					// A should have #FF	
+			ld sp,#ffff				//Real reset simulation. Sp is set to #ffff,
+			jp 0					; jp to 0, rst 0 is not good becaus it is call
 2			
 			cp '1'					//key 1
-			jr nz,3F
+			jp nz,3F
+			call clean
+			ld bc,#B800
+			ld	(txy32.cursor),bc
+			LD HL, STRIPS
+			call txy32.txy
+			ld bc,#BF00
+			ld de,#BFFF
+			call draw_jugo.DRAW				
+			ld de,#0D03
+	        ld hl,BSDOSLogo
+			call sprite2.OK
+			ld	bc,#9856
+			ld	(txy51.cursor),bc
+			ld	hl,BSD1
+			call txy51.txy					
+
+holdkey3	call iinkey.IINKEY
+			jr nz,holdkey3	
+
 			ld b,6					//number of pages to transfer					
 22			push bc
 			xor a
@@ -530,7 +561,26 @@ skipanim
 			jr 4F
 3			
 			cp '!'					; key !
-			jr nz, 5F				
+			jr nz, 5F
+			
+			call clean
+			ld bc,#B800
+			ld	(txy32.cursor),bc
+			LD HL, STRIPS
+			call txy32.txy
+			ld bc,#BF00
+			ld de,#BFFF
+			call draw_jugo.DRAW				
+/*			ld de,#0E00
+	        ld hl,EsxLogo
+			call sprite2.OK*/
+			ld	bc,#9052
+			ld	(txy51.cursor),bc
+			ld	hl,BSD2
+			call txy51.txy
+holdkey4	call iinkey.IINKEY
+			jr nz,holdkey4
+
 4			xor a
 			ld bc,#203B					//ZXi portselect
 			out (c),a
@@ -556,8 +606,15 @@ skipanim
 
 5			cp 'e'					// key e
 			jr nz, 7F				// no key
-			
-6			ld a,64					// 128K reset in BSROM140
+
+6
+			xor a
+			ld bc,#203B				//ZXi portselect
+			out (c),a
+			ld bc,#213B
+			ld a,1					//HW - 1 - MB02+
+			out (c),a			
+			ld a,64					// 128K reset in BSROM140
 			out (23),a
 			jp #3906				//jp to bsrom140
 			
@@ -585,23 +642,21 @@ skipanim
 			xor a
 			out (#27),a
 			out (#67),a
-
 			ld a,20														
 			out (#07),a
 			inc a
 			out (#47),a
-
+			ld a,#60					//flash enable, read only
+			out (#53),a
 			ld hl,0
 			ld de,27000
 			ld bc,6000
 			ldir
+			xor a						//firmware flash page														
+			out (#07),a
+			inc a
+			out (#47),a
 
-			ld bc,#213B
-			ld a,1						//HW - 1 - MB02+
-			out (c),a
-			
-			ld a,64
-			out (23),a
 			jp 27000
 			
 8			cp 't'					// key t - zx diagnostics
@@ -623,9 +678,29 @@ skipanim
 			out (#53),a
 			rst 0
 9			cp '2'					// key 2 - Papaya DOS- ESXDOS DivMMC
-			jr nz, 10F				
+			jr nz, 10F
+
+			call clean
+			ld bc,#B800
+			ld	(txy32.cursor),bc
+			LD HL, STRIPS
+			call txy32.txy
+			ld bc,#BF00
+			ld de,#BFFF
+			call draw_jugo.DRAW				
+			ld de,#0E00
+	        ld hl,EsxLogo
+			call sprite2.OK
+			ld	bc,#9458
+			ld	(txy51.cursor),bc
+			ld	hl,ESX1
+			call txy51.txy					
+
+holdkey1	call iinkey.IINKEY
+			jr nz,holdkey1	
+
 			xor a
-			out (23),a
+//			out (23),a 
 			ld bc,#203B				//ZXi portselect
 			out (c),a
 			ld bc,#213B
@@ -646,22 +721,46 @@ div_erase	out (#E3),a
 			ldir
 			inc a
 			cp 128+5
-			jr nz,div_erase		//delete first 32KB od DivIde RAM
-			xor a							//is enought to erase bank0 or
-			out (#E3),a				//to force cold start zero $2dXX in page 0
+			jr nz,div_erase		//delete first 32KB od DivMMC RAM
+			xor a				//is enought to erase bank0 or
+			out (#E3),a			//to force cold start zero $2dXX in page 0
 			rst 0
 10		cp "R"					//restart firmware
 			jr nz, 11F
+			xor a
+			ld bc,#203B				//ZXi portselect
+			out (c),a
+			ld bc,#213B
+			ld a,255				//HW - FF - Firmware
+			out (c),a
+			xor a
+			out (#27),a
+			out (#67),a
+;			ld a,2
+			out (#07),a
+			inc a
+			out (#47),a
+			ld a,%01100000	;enable flash write disable
+			out (#53),a
 			rst 0
 11		cp "r"					//restart to ramcode
 			jr nz,12F
 			jp ramcode
 12		cp "T"					//advance system info
 			jp nz,14F
-13			ld hl,#5000
-			ld de,#5001
-			ld bc,#07ff
-			ldir
+13			call clean
+//carymary2
+			ld bc,#B800
+			ld	(txy32.cursor),bc
+			LD HL, STRIPS
+			call txy32.txy
+			ld bc,#BF00
+			ld de,#BFFF
+			call draw_jugo.DRAW			
+			ld de,#1013
+	        ld hl,CaroLogo
+			call sprite2.OK
+
 			xor a
 			ld bc,#203B				//ZXi portselect
 			out (c),a
@@ -671,6 +770,39 @@ div_erase	out (#E3),a
 			ld a,#E0				//FRAM active
 			out (#53),a
 
+			ld	bc,#8000
+			ld	(txy51.cursor),bc
+			ld	hl,ADVS0
+			call txy51.txy			
+			ld hl,#3FFF
+			ld e,(hl)
+			dec hl
+			ld a,(hl)
+			or e
+			ld hl,LEVEL7
+			jr nz, userlevel
+			ld a,(#3FFD)
+			sla a
+			ld hl,LEVEL6
+			jr c, userlevel
+			sla a
+			ld hl,LEVEL5
+			jr c, userlevel
+			sla a
+			ld hl,LEVEL4
+			jr c, userlevel
+			sla a
+			ld hl,LEVEL3
+			jr c, userlevel
+			sla a
+			ld hl,LEVEL2
+			jr c, userlevel
+			sla a
+			ld hl,LEVEL1
+			jr c, userlevel
+			ld hl,LEVEL0
+userlevel	call txy51.txy				
+			
 			ld	bc,#9000
 			ld	(txy51.cursor),bc
 			ld	hl,ADVS1
@@ -811,39 +943,50 @@ div_erase	out (#E3),a
 			inc hl
 			djnz 1B
 
-//carymary2
+			call iinkey.ANYKEY
+			jp 13B
+
+14			cp "@"					//DivIDE
+			jp nz, loopkey
+			
+			call clean
 			ld bc,#B800
 			ld	(txy32.cursor),bc
 			LD HL, STRIPS
 			call txy32.txy
 			ld bc,#BF00
-			ld de,#BFff
-			call draw_jugo.DRAW
-			call iinkey.ANYKEY
-			jp 13B
+			ld de,#BFFF
+			call draw_jugo.DRAW				
+			ld de,#0E00
+	        ld hl,EsxLogo
+			call sprite2.OK
+			ld	bc,#9458
+			ld	(txy51.cursor),bc
+			ld	hl,ESX1
+			call txy51.txy					
 
-14		cp "@"					//DivIDE
-			jp nz, 1B
+holdkey2	call iinkey.IINKEY
+			jr nz,holdkey2	
 			xor a
-			out (23),a
+//			out (23),a
 			ld bc,#203B				//ZXi portselect
 			out (c),a
 			ld bc,#213B
-			ld a,3						//HW - 3 - DIVMMC/DIVIDE
+			ld a,3					//HW - 3 - DIVMMC/DIVIDE
 			out (c),a
 
 			ld bc,#203B				//ZXi portselect 
 			ld a,2
 			out (c),a
 			ld bc,#213B
-			ld a,2						//IDE - 2 PVL ports- DIVMMC/DIVIDE
+			ld a,2					//IDE - 2 PVL ports- DIVMMC/DIVIDE
 			out (c),a
 
 			ld bc,#203B				//ZXi portselect 
-			ld a,1						//Audio
+			ld a,1					//Audio
 			out (c),a
 			ld bc,#213B
-			ld a,%00010000  	//dissable GS
+			ld a,%11101111  		//dissable GS
 			out (c),a
 
 			ld a,128
@@ -890,6 +1033,204 @@ NUM_PRIC sbc  hl,de
          ;;inc  c
          ret
 
+clock
+			ld ix,clockbuff
+			xor a
+			ld bc,#203B
+			out (c),a
+			ld bc,#273B
+			in a,(c)
+			push af
+			and #0F
+			or #B0
+			ld (ix+21),a		//1sec
+			pop af
+			rr a
+			rr a
+			rr a
+			rr a
+			and #07
+			or 48
+			ld (ix+20),a		//10sec
+			ld a,1
+			ld bc,#203B
+			out (c),a
+			ld bc,#273B
+			in a,(c)
+			push af			
+			and #0F
+			or 48
+			ld (ix+18),a		//1min
+			pop af
+			rr a
+			rr a
+			rr a
+			rr a
+			and #07
+			or 48
+			ld (ix+17),a		//10min
+			ld a,2
+			ld bc,#203B
+			out (c),a
+			ld bc,#273B
+			in a,(c)
+			push af
+			and #0F
+			or 48
+			ld (ix+15),a		//1hour
+			pop af
+			rr a
+			rr a
+			rr a
+			rr a
+			and #07
+			or 48
+			ld (ix+14),a		//10hour
+			ld a,3
+			ld bc,#203B
+			out (c),a
+			ld bc,#273B
+			in a,(c)
+			dec a
+			and #7
+			sla	a
+			sla	a
+			ld hl, weekdays
+			ld d,0
+			ld e,a
+			add hl,de
+			ld de, clockbuff2
+			ld bc,4
+			ldir
+			ld a,4
+			ld bc,#203B
+			out (c),a
+			ld bc,#273B
+			in a,(c)
+			push af
+			and #0F
+			or 48
+			ld (ix+1),a		//1day
+			pop af
+			rr a
+			rr a
+			rr a
+			rr a
+			and #03
+			or 48
+			ld (ix+0),a		//10day	
+			ld a,5
+			ld bc,#203B
+			out (c),a
+			ld bc,#273B
+			in a,(c)
+			push af
+			and #0F
+			or 48
+			ld (ix+4),a		//1month
+			pop af
+			rr a
+			rr a
+			rr a
+			rr a
+			and #01
+			or 48
+			ld (ix+3),a		//10month
+			ld a,6
+			ld bc,#203B
+			out (c),a
+			ld bc,#273B
+			in a,(c)
+			push af
+			and #0F
+			or #B0
+			ld (ix+9),a		//1year
+			pop af
+			rr a
+			rr a
+			rr a
+			rr a
+			and #0F
+			or 48
+			ld (ix+8),a		//10year
+
+//			ld a,1
+//			out (254),a
+
+			ld a,6			//clear place
+			ld hl, 16384+2048+32+512+27
+			ld de, 16384+2048+32+512+27+1
+			ld bc,4
+1B			ld (hl),0
+			push bc
+			ldir
+			pop bc
+			sbc hl,bc
+			inc h
+			ld d,h
+			ld e,l
+			inc e
+			dec a
+			jr nz, 1B
+
+//			ld a,2
+//			out (254),a
+
+			ld	bc,#49D8	//print clock
+			ld	(txy51.cursor),bc	
+			ld hl,clockbuff3
+			call txy51.txy
+//			ld a,3
+//			out (254),a
+			ld	bc,#4990
+			ld	(txy51.cursor),bc			
+			ld hl,clockbuff
+			call txy51.txy
+//			ld a,4
+//			out (254),a
+			ld	bc,#49C5
+			ld	(txy51.cursor),bc			
+			ld hl,clockbuff2
+			call txy51.txy
+			
+			ret
+clockbuff	dc "22/05/2073" 
+clockbuff2	dc "Tue "
+clockbuff3	dc "16:33:26"
+weekdays	dc "Sun "
+			dc "Mon "
+			dc "Tue "
+			dc "Wed "
+			dc "Thu "
+			dc "Fri "
+			dc "Sat "
+
+clean		ld a,7			//clear place
+			ld hl, 16384+2048+32+256+0
+			ld de, 16384+2048+32+256+0+1
+			ld bc,255-32
+1B			ld (hl),0
+			push bc
+			ldir
+			pop bc
+			sbc hl,bc
+			inc h
+			ld d,h
+			ld e,l
+			inc e
+			dec a
+			jr nz, 1B
+			ld hl, 16384+2048+64+0
+			ld de, 16384+2048+64+0+1
+			ld bc,255-64
+			ld (hl),0
+			ldir
+			ld hl, 16384+4096
+			ld de, 16384+4096+1
+			ld bc,2047
+			ld (hl),l
+			ldir					
+			ret	
 ; --------------- L I B R A R I E S ---------------------------------------	
 	
 //INCLUDE "nasobeniHLDE.a80"
@@ -903,14 +1244,19 @@ NUM_PRIC sbc  hl,de
 	INCLUDE "txy32.a80"
 	INCLUDE "sprite2.a80"
 	INCLUDE "xdec_06.a80"
+	INCLUDE "cf.a80"
 MB03pluslogo
 	INCBIN "MB03+LOGOv2.bin"
 ultimatelogo	
 	INCBIN "ULTIMATE.bin"
 dots	
 //	INCBIN "DOTS.bin"	
-/*CaroLogo
-	INCBIN "CaroLogo.bin" */
+CaroLogo
+	INCBIN "CaroLogo.bin"
+EsxLogo
+	INCBIN "ESXLOGO.bin"
+BSDOSLogo
+	INCBIN "BSDOSLOGO.bin"		
 /*
 NewdimLogo
 	INCBIN "NewdimLogo.bin"
@@ -944,58 +1290,86 @@ zvukend
 ; --------------- T E X T---------------------------------------
 TEXT0 	 	dc 16,69,"LMN128-Jan Kucera-Zlin/CZ"
 TEXT4 		db 16,71,"1:",16,6,"MB02+(BSDOS308a+EH) ",16,71,"e:",16,6,"bs128Kreset"
-					dc " "
-TEXT2	 		db 16,71,"2:",16,6,"DivMMC  ",16,71,"@:",16,6,"DivIDE  "
-					dc " "
-TEXT3    	db 16,71,"3:",16,6,"MB03+             ",16,71,"d:",16,7,"Devastace+ ",16,71,"t:",16,7,"diag ",16,71,"break:",16,7,"ZXROM  "
-					dc " "
+			dc " "
+TEXT2	 	db 16,71,"2:",16,6,"DivMMC  ",16,71,"@:",16,6,"DivIDE  "
+			dc " "
+TEXT3    	db 16,71,"3:",16,6,"Ultimate BSDOS & esxDOS ",16,71,"d:",16,7,"Dev+ ",16,71,"t:",16,7,"diag ",16,71,"break:",16,7,"ZXROM  "
+			dc " "
 TEXT1    	dc 16,69,"MB03+ Ultimate firmware 1.28"
+
 STRIPS		db 16,66,32,32
-					db 16,70,32,32
-					db 16,68,32,32,32,32,32
-					dc 16,69,32,32,32,32,32+128
+			db 16,70,32,32
+			db 16,68,32,32,32,32,32
+			db 16,69,32,32,32,32,32
+			db 16,7,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32+128
 ;TEXTTEST 	dc 16,6,"0123456789 128 WADHTUTTUU ZX Spectrum 128+2"
 ;TEXTTEST2 dc 16,6,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwyxz"
-HW1				db 16,67,"HARDWARE: "
-					dc 16,7,"3.0"
-HW2				db 16,3,"FPGA: "
-					dc 16,7,"Xilinx SPARTAN 7 XC7S50/100 MHz"
-HW3				db 16,3,"RTC: "
-					dc 16,7,"Maxim DS3234"
-HW4				db 16,3,"SRAM: ",16,7,"8192 KBytes ",16,3,"FastSRAM: "
-					dc 16,7,"4096 KBytes"
-HW5				db 16,3,"STORAGE: "
-					dc 16,7,"CompactFlash, 2x microSD"
-HW6				db 16,3,"OTHERS: "
-					dc 16,7,"USB, Wifi ESP8266, Matrix 8x8 LEDs"
+HW1			db 16,67,"HARDWARE: "
+			dc 16,7,"3.1"
+HW2			db 16,3,"FPGA: "
+			dc 16,7,"Xilinx SPARTAN 7 XC7S50/112 MHz"
+HW3			db 16,3,"RTC: "
+			dc 16,7,"Maxim DS3234"
+HW4			db 16,3,"SRAM: ",16,7,"16MB ",16,3,"FastSRAM: ",16,7,"4MB ",16,3,"FLASH: ",16,7,"2MB  ",16,3,"FRAM: "
+			dc 16,7,"8KB"
+HW5			db 16,3,"STORAGE: "
+			dc 16,7,"2x microSD, CF:"
+HW6			db 16,3,"OTHERS: "
+			dc 16,7,"USB, Wifi ESP8266, Matrix 8x8 LEDs"
 
-CONF1			db 16,67,"CONFIGURATION: "
-					dc 16,7,"1.9"
-CONF2			db 16,3,"3xAY: "
-					db 16,7,"ON  ",16,3,"SounDrive: ",16,7,"ON  ",16,3,"SAA1099: ",16,7,"ON  ",16,3,"Gen.Sound:"
-					dc 16,7,"ON"
-CONF3			db 16,3,"DMA: "
-					db 16,7,"ON  ",16,3,"IDE: ",16,7,"ON  ",16,3,"SD: ",16,7,"ON  ",16,3,"RTC: ",16,7,"ON ",16,3,"Wifi: "
-					dc 16,7,"OFF"
-ADVS1			db 16,6,"OnTime: " 
-				dc 16,7," "
-ADVS2			db 16,6,"Nmi:    "
-				dc 16,7," "
-ADVS3			db 16,6,"Reset:  "
-				dc 16,7," "
-ADVS4			db 16,6,"Extra:  "
-				dc 16,7," "
-ADVS5			db 16,6,"PowerUp:"
-				dc 16,7," "				
-FW1				dc 16,0,"FW:1.28/"
-TESTNUMBER		db 255,255,1,0
-DATE			db 16,0
+CONF1		db 16,67,"CONFIGURATION: "
+			dc 16,7,"2.3"
+CONF2		db 16,3,"3xAY: "
+			db 16,7,"ON  ",16,3,"SounDrive: ",16,7,"ON  ",16,3,"SAA1099: ",16,7,"ON  ",16,3,"Gen.Sound:"
+			dc 16,7,"ON"
+CONF3		db 16,3,"DMA: "
+			db 16,7,"ON  ",16,3,"IDE: ",16,7,"ON  ",16,3,"SD: ",16,7,"ON  ",16,3,"RTC: ",16,7,"ON ",16,3,"Wifi: "
+			dc 16,7,"ON"
+ADVS0		db 16,6,"User level: " 
+			dc 16,7," "			
+ADVS1		db 16,6,"OnTime: " 
+			dc 16,7," "
+ADVS2		db 16,6,"Nmi:    "
+			dc 16,7," "
+ADVS3		db 16,6,"Reset:  "
+			dc 16,7," "
+ADVS4		db 16,6,"Extra:  "
+			dc 16,7," "
+ADVS5		db 16,6,"PowerUp:"
+			dc 16,7," "
+LEVEL0		dc 16,7,"Loser"
+LEVEL1		dc 16,7,"Rookie"
+LEVEL2		dc 16,6,"Novice"
+LEVEL3		dc 16,6,"Beginner"
+LEVEL4		dc 16,5,"Enhanced"
+LEVEL5		dc 16,5,"Geek"
+LEVEL6		dc 16,5,"Guru"
+LEVEL7		dc 16,4,"Ultimate"						
+FW1			dc 16,0,"FW:1.28/"
+ESX1		dc 16,5,"esxDOS is loading"
+BSD1		dc 16,5,"BSDOS+EasyHDD is loading "
+BSD2		dc 16,5,"EasyHDD is loading "
+ULT1		db 16,5,"Brand new ",16,7,"BSDOS ",16,5,"is in progress of development.",32+128
+ULT2		db 16,6,"BUSY ",16,5,"- famous demos coder and author of BSDOS",32+128
+ULT3		dc 16,5,"for MB02+ will bring new version soon."
+ULT4		db 16,6,"Miguel ",16,5,"(Papaya Dezign) is in progress of deve-",32+128
+ULT5		db 16,5,"lopment of new ",16,7,"ESXDOS ",16,5,"ver. 0.9.x for MB03+ !!!",32+128
+ULT6		db 16,5,"New one included a lot of new features. LFN e.g.",32+128
+ULT7		dc 16,4,"Due to MB03+ capabilities both system will be "
+ULT8		dc 16,4,"more flexible and faster."
+
+//test#3FFD   db 32
+
+DATE		db 16,0
 	LUA ALLPASS
 	_pc('db	"' .. os.date("%Y%m%d") .. '"') 
 	ENDLUA
 	dc " " 
 		//block 8 // kompenzace delky souboru kvuli os.date
 endramcode			
+	
+	savesna  "boot.sna",ramcode
+	EMPTYTAP "boot.tap"
+	SAVETAP  "boot.tap",CODE,"boot",maincode,endramcode-maincode,maincode
+	ENDMODULE
 		
-	savesna "boot.sna",ramcode  //maincode//ramcode	
-	ENDMODULE	

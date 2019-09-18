@@ -1,0 +1,386 @@
+  MODULE cf
+// output
+// A - error number  - Z - OK
+// HL - text of error
+// IX	- 512 bytes of indentify data; examples below
+
+IDENT    ld   ix,BUFFER
+         xor a              //only master
+;         ld   a,%00000000
+         call IDENTIFY       
+
+         ld   hl,TEXT16
+         push af			
+         jr   z,TISKSTATUS1 ; OK
+         ld   hl,TEXT11
+         cp   255
+         jp   z,TISKSTATUS1
+         ld   hl,TEXT14
+         cp   6
+         jp   z,TISKSTATUS1
+         ld   hl,TEXT13
+         cp   3
+         jp   z,TISKSTATUS1
+         ld   hl,TEXT12
+         dec  a
+         jp   z,TISKSTATUS1
+         ld   hl,TEXT15         
+TISKSTATUS1  pop  af
+       
+// A - error number
+// HL - text of error				
+/* examples
+MASTERINFO
+         ld   hl,TEXT4
+         ld   bc,#0602
+         call T42_TEXT
+         ld   hl,TEXT5
+         ld   bc,#0702
+         call T42_TEXT
+         ld   hl,TEXT6
+         ld   bc,#0802
+         call T42_TEXT
+         ld   hl,TEXT7
+         ld   bc,#0902
+         call T42_TEXT
+         ld   hl,TEXT101
+         ld   bc,#0A02
+         call T42_TEXT
+         ld   hl,TEXT102
+         ld   bc,#0A15
+         call T42_TEXT
+
+;model
+         ld   hl,BUFFER+54
+         ld   b,40
+         call PROHOD
+         set  7,(ix+84)
+
+         ld   bc,#0609
+         call T42_TEXT
+
+;firmware
+         ld   hl,BUFFER+46
+         ld   b,8
+         call PROHOD
+         set  7,(ix+53)
+
+         ld   bc,#070C
+         call T42_TEXT
+
+;serial number
+
+         ld   hl,BUFFER+20
+         ld   b,20
+         call PROHOD
+         set  7,(ix+39)
+
+         ld   bc,#0811
+         call T42_TEXT
+         
+
+         
+;LBA
+         ld   hl,TEXT_NO
+         bit  1,(ix+99)
+         jr   z,L1
+
+         ld   hl,TEXT_YES
+L1       ld   bc,#090D
+         call T42_TEXT
+
+;DMA
+         ld   hl,TEXT_NO
+         bit  0,(ix+99)
+         jr   z,L2
+
+         ld   hl,TEXT_YES
+L2       ld   bc,#0925
+         call T42_TEXT
+
+;CHS
+;Cylinders
+				 ld l,(ix+2)
+				 ld h,(ix+3)
+         ld   bc,#0A09
+         call NUMBER4              
+;Heads         
+         ld l,(ix+6)
+				 ld h,(ix+7)
+         ld   bc,#0A0f
+         call NUMBER1
+;Sectors         
+         ld l,(ix+12)
+				 ld h,(ix+13)
+         ld   bc,#0A12
+         call NUMBER1
+         
+;capacity                          
+				 ld l,(ix+12)
+				 ld h,(ix+13)
+         ld e,(ix+6)
+				 ld d,(ix+7)
+				
+				
+				 push ix ; rutina nasob pouziva IX
+         call nasobeniHLDE.nasob
+         pop ix
+         ld e,(ix+2)
+				 ld d,(ix+3)
+				 
+				 push ix
+         call nasobeniHLDE.nasob
+;vysledek je v IXHL
+
+				 ld l,h
+				 ld a,xl
+				 ld h,a
+				 ld e,hx
+
+;delime 256 vysledek EHL
+         ld b,3
+trikrat1 
+         srl e
+         rr h
+         rr l
+         djnz trikrat1				 
+;delime tremi
+         ld   bc,#0A1F         
+         call NUMBER4
+         
+         pop ix
+         
+         
+;LBA 48Bits
+
+         inc  hx
+
+         ld   hl,TEXT_NO
+         bit  2,(ix-83)
+         jr   z,L3
+
+         ld   hl,TEXT_YES
+L3       ld   bc,#091C
+         call T42_TEXT
+
+Endinentify
+*/				
+         ret
+; navrat  
+;------------------------------
+TEXT11   dc 16,7,"disk time out "
+TEXT12   dc 16,7,"status b0 error "
+TEXT13   dc 16,7,"DRQ error "
+TEXT14   dc 16,7,"drive not ready "
+TEXT15   dc 16,7,"other error "
+TEXT16   db 16,7,"OK "
+TEXT_YES dc 16,7,"Yes"
+TEXT_NO  dc 16,7,"No"
+
+/*
+;------------------------------
+;TISK CISLA BC-POZICE HL-HODNOT
+;TISKNE CISLO TYPU INTEGER
+;STAR-RUTINA TISKU 1 ZNAKU NA
+;POZICI BC (0,0)
+NUMBER4  ld   de,-10000
+         call NUM_JED
+NUMBER3  ld   de,-1000
+         call NUM_JED
+NUMBER2  ld   de,-100
+         call NUM_JED
+NUMBER1  ld   de,-10
+         call NUM_JED
+NUMBER0  ld   a,l
+         add  a,48
+         jp   T42
+
+NUM_JED  xor  a
+NUM_JED1 add  hl,de
+         jr   nc,NUM_PRIC
+         inc  a
+         jr   NUM_JED1
+NUM_PRIC sbc  hl,de
+         add  a,48
+         push bc
+         push hl
+         call T42
+         pop  hl
+         pop  bc
+         inc  c
+         ret
+*/
+;------------------------------
+;IDENTIFY:ix-adresa, a-mas/slv
+IDENTIFY
+         or   %11100000
+         ld   (ACCMODE0+1),a
+         call TST_BSY
+         ret  nz
+
+ACCMODE0 ld   a,0
+         out  (P_HEA),a
+         ld   a,#EC
+         out  (P_COM),a
+         call TST_DR
+         ret  nz
+
+         call RD_512
+
+         call TST_BSY
+;
+         ret
+/*
+;fyzicke cteni jednoho LBA sectoru
+;ix=adresa, a=mod adresace bit4=master/slave
+;cedb= 28 bit lba sector;c-sectornumber,e-cylinderlow,d-cylinderhigh,b-head
+LBAREAD
+         or   %11100000
+;natvrdo LBA  bit6 urcuje, ze se pouzije LBA pristup        
+         ld   (HEA_REG+1),a
+         call TST_BSY
+         ret  nz
+         
+HEA_REG  ld   a,%11100000
+				 or  b
+; prictou se nejvyssi ctyri bity LBA				 
+         out  (P_HEA),a
+;cislo hlavicky
+
+         ld   a,1
+         out  (P_HSE),a
+;pocet sektoru 1*512B
+
+         ld   a,c
+         out  (P_NSE),a
+;cislo sektoru od 1
+
+         ld   a,e
+         out  (P_CYL),a
+         ld   a,d
+         out  (P_CYH),a
+;cislo cylindru
+
+         ld   a,#20
+         out  (P_COM),a
+
+
+         call TST_DR
+         ret  nz
+
+         call RD_512
+         call TST_BSY
+;         ret  nz
+
+         ret*/
+
+TST_BSY
+         push hl
+         ld   hl,0
+TST1
+         dec  hl
+         ld   a,l
+         or   h
+         jr   z,TOUT1
+P84      in   a,(P_COM)
+         cp   255
+         jr   z,TST1
+         bit  7,a
+         jr   nz,TST1
+         pop  hl
+         ret
+TOUT1
+         ld   a,255
+         or   a
+         pop  hl
+         ret
+;------------------------------
+;test BSY,DRDY,DRQ,ERR statusu
+TST_DR
+         call TST_BSY
+         ret  nz
+         bit  6,a
+         jr   z,ER6
+         bit  3,a
+         jr   z,ER3
+         bit  0,a
+         jr   nz,ER1
+         ret
+ER6      ld   a,7
+         dec  a
+         ret
+ER3      ld   a,4
+         dec  a
+         ret
+ER1      ld   a,1
+         ret
+;------------------------------
+RD_512
+         ld   (DMADR1),ix
+         push hl
+         ld   hl,RD1S
+         ld   bc,RD1L*256+DMA
+RDWR1    otir
+         ld   b,#87				;WR6 enable dma
+         out  (c),b
+         pop  hl
+         ld   bc,512
+         add  hl,bc
+         ret
+;---<DMA_IN>-------------------
+RD1S
+         defb 195				;WR6 #C3 reset
+         defb %01111101			;WR0 A->B, transfer
+         defw P_DAT				;source port
+         defw 511				;lenght
+         defb %00101100			;WR1 A-port,A-fixed
+         defb %00010000			;WR2 B-memory, B-increment
+         defb %10101101			;WR4 continuous,
+DMADR1   defw 0					;destination
+         defb %10010010			;WR5 ready low,CE/WAIT,stop on end of block
+         defb #CF				;WR6 load
+         defb #B3				;WR6 force ready
+RD1L     equ  $-RD1S
+
+;------------------------------
+;prohazuje vyssi a nizsi byte
+;zkurveny system
+PROHOD
+;HL adresa
+;B kolik bytu
+;MENI: A
+         push hl
+         push bc
+         rrc  b
+PROHOD1
+         ld   a,(hl)
+         inc  hl
+         ld   c,(hl)
+         dec  hl
+         ld   (hl),c
+         inc  hl
+         ld   (hl),a
+         inc  hl
+         djnz PROHOD1
+         pop  bc
+         pop  hl
+         ret
+
+;------------------------------
+/*D1LBA    defw 0,0,0
+D2LBA    defw 0,0,0
+LEN      equ  $-32768*/
+BUFFER   ;equ  25000
+					block 512,48
+;porty HOOD
+P_DAT 	equ 195	;8'b110xx011
+P_ERR 	equ 167	;8'b101xx111
+P_HSE 	equ 203	;8'b110xx011
+P_NSE 	equ 175	;8'b101xx111
+P_CYL 	equ 211	;8'b110xx011
+P_CYH 	equ 183	;8'b101xx111
+P_HEA 	equ 219	;8'b110xx011
+P_COM 	equ 191 ;8'b101xx111          
+DMA     equ  11 
+
+  endmodule
