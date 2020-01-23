@@ -1,0 +1,114 @@
+VERZE 1.1
+
+
+;;;;;;;;;;;
+;; Porty ;;
+;;;;;;;;;;;
+
+;; Pristup na portoch by mohol fungovat vzdy,
+;; bez nutnosti aktivacie alebo nastavenia - //toho bohuzel nejde
+
+;; //Port #203B = Select LCU
+;; //Port #213B = Nastavenia (rezerva) - sign/insign
+;;
+;; 223B = Nasobenie 8x8 bit - 1.operand - nizsi bajt vysledku
+;; 233B = Nasobenie 8x8 bit - 2.operand - vyssi bajt vysledku
+;; 243B = Nasobenie 16x16 bit - 1.operand nizsi bajt - najnizsi bajt vysledku
+;; 253B = Nasobenie 16x16 bit - 1.operand vyssi bajt -    dalsi bajt vysledku
+;; 263B = Nasobenie 16x16 bit - 2.operand nizsi bajt -    dalsi bajt vysledku
+;; 273B = Nasobenie 16x16 bit - 2.operand vyssi bajt - najvyssi bajt vysledku
+
+;; Priklady rutiniek
+
+        ;; 8*8 bit multiplication
+        ;; HL = D * E
+
+        ld  bc,#223B
+        out (c),e
+        inc b
+        out (c),d
+        in  h,(c)
+        dec b
+        in  l,(c)
+
+        ;; alebo
+
+        ld  bc,#233B
+        out (c),d
+        dec b
+        out (c),e
+        in  l,(c)
+        inc b
+        in  h,(c)
+
+        ;; 16*16 bit multiplication
+        ;; DEHL = DE * HL
+
+        ld  bc,#243B
+        out (c),l
+        inc b
+        out (c),h
+        inc b
+        out (c),e
+        inc b
+        out (c),d
+        in d,(c)
+        dec b
+        in e,(c)
+        dec b
+        in h,(c)
+        dec b
+        in l,(c)
+
+;; Na poradi outovania udajov by nemalo zalezat
+// ano, nezalezi, vysledek je vzdy platny, takze lze menit jen jeden operad.
+
+;;;;;;;;;;;;
+;; Memory ;;
+;;;;;;;;;;;;
+
+;; #203B = Nastavenia pre memory access
+;; #213B = Nastavenia (rezerva)
+;;
+;; #2002 = Nasobenie 8x8 bit - 1.operand - nizsi bajt vysledku
+;; #2003 = Nasobenie 8x8 bit - 2.operand - vyssi bajt vysledku
+;; #2004 = Nasobenie 16x16 bit - 1.operand nizsi bajt - najnizsi bajt vysledku
+;; #2005 = Nasobenie 16x16 bit - 1.operand vyssi bajt -    dalsi bajt vysledku
+;; #2006 = Nasobenie 16x16 bit - 2.operand nizsi bajt -    dalsi bajt vysledku
+;; #2007 = Nasobenie 16x16 bit - 2.operand vyssi bajt - najvyssi bajt vysledku
+
+        ;; 8*8 bit multiplication
+        ;; HL = D * E
+
+        ld  (#2002),e
+        ld  (#2003),d
+        ld  l,(#2002)
+        ld  h,(#2003)
+
+        ;; alebo
+
+        ld  (#2002),de
+        ld  hl,(#2002)
+
+        ;; alebo
+
+        ld  a,d
+        ld  (#2003),a
+        ld  a,e
+        ld  (#2002),a
+        ld  a,(#2003)
+        ld  h,a
+        ld  a,(#2002)
+        ld  l,a
+
+        ;; 16*16 bit multiplication
+        ;; DEHL = DE * HL
+
+        ld (#2004),de
+        ld (#2006),hl
+        ld hl,(#2004)
+        ld de,(#2006)
+
+;; Na poradi zapisovania udajov by nemalo zalezat
+// ano, nezalezi, vysledek je vzdy platny, takze lze menit jen jeden operad.
+

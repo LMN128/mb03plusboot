@@ -1,0 +1,89 @@
+        ;LCU (LMN Coprocesor Unit) exaples
+ ;--------------------------------------------
+        ;MULTIPLICATION
+ ;--------------------------------------------       
+        ;IO access
+        ld bc,#203B
+        ld a,#FF
+        out (c),a               ; select LCU 
+        
+        ;8bits multiplication
+        ;Input: H,L=values
+        inc b
+        out (c),l               ; port #213B
+        inc b
+        out (c),h               ; port #223B
+        in l,(c)                ; port #223B
+        dec b
+        in h,(c)                ; port #213B
+        ;Output: HL=H*L
+
+        ;16bits multiplication
+        ;Input: HL,DE=values
+        inc b
+        out (c),l               ; port #213B
+        inc b
+        out (c),e               ; port #223B
+        inc b
+        out (c),h               ; port #233B
+        inc b
+        out (c),d               ; port #243B
+        in e,(c)                ; port #243B
+        dec b
+        in d,(c)                ; port #233B
+        dec b
+        in l,(c)                ; port #223B
+        dec b
+        in h,(c)                ; port #213B      
+        ;Output: HLDE=HL*DE
+
+        ;MEMORY access          ;#2000-#2001 A16
+        ld bc,#203B             ;#2002-#2003 B16
+        xor a                   ;#2004-#2007 C32 (C32=A16*B16)
+        out (c),a
+        inc b
+        ld a,#FF                ;(or #04 or #05) machine select
+        out (c),a
+        ld a,%11000010          ;select LCU RAM, WR enable
+
+        ;8bits multiplication
+        ;Input: D,E=values
+        ld hl,#2000
+        ld (hl),e
+        inc l
+        inc l
+        ld (hl),d
+        inc l
+        ld e,(hl)
+        inc l
+        ld d,(hl)
+        ;Output: HLDE=HL*DE
+
+        ;16bits multiplication
+        ;Input: HL,DE=values
+        ld (#2000),de
+        ld (#2002),hl
+        ld de,(#2004)
+        ld hl,(#2006)
+        ;Output: HLDE=HL*DE
+
+        
+;--------------------------------------------
+        ;DIVISION
+;-------------------------------------------- 
+;MEMORY access                  ;#2008-#2009 D16
+        ld bc,#203B             ;#200A-#200B E16
+        xor a                   ;#200C-#200D F16 (F16=E16%D16)
+        out (c),a               ;#200E-#200F G16 (G16=E16/D16)
+        inc b
+        ld a,#FF                ;(or #04 or #05) machine select
+        out (c),a
+        ld a,%11000010          ;select LCU RAM, WR enable       
+
+        ;16bits division
+        ;Input: HL,DE=values
+        ld (#2008),de
+        ld (#200A),hl
+        ld de,(#200C)
+        ld hl,(#200E)
+        ;Output: HL=HL/DE, DE=HL%DE

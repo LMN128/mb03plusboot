@@ -48,7 +48,56 @@ ramcodeinrom
 ramcode		
 			di						; for sna test
 			ld sp,0					; for sna test
-; temporary switch to MB02+ machine for testing and NMI enable			
+; set wifi module to gently power consumption
+			call iinkey.IINKEY
+			cp "w"
+			jr z,wfon
+			cp "W"
+			jr z,wfon
+			jr 2F
+wfon		ex af,af'
+			ld bc,#203B
+			ld a,5
+			out (c),a
+			inc b
+			in a,(c)			
+			or 1
+			out (c),a				; wifi ON
+			ld b,3					; wftimeout	
+wfloop1		ld de,0							
+wftimeout	dec de
+			ld a,d
+			or e
+			jr nz, wftimeout
+			djnz wfloop1
+			ex af,af'
+			cp "W"
+			jr nz,2F
+			ld b,#13				; wifi ZXi TX port
+			ld hl,wifistring
+
+1			ld a,(hl)
+			out (c),a
+			ex af,af'
+wfbusy		
+			in a,(c)
+			bit 1,a					
+			jr nz,wfbusy
+			ex af,af'						
+			inc hl
+			cp 10
+			jr nz,1B
+	
+/*			ld b,#21
+			in a,(c)			
+			and %11111110
+			out (c),a				; wifi OFF*/
+			jr 2F
+wifistring  db "AT+RFPOWER=0",13,10
+
+2									
+; temporary switch to MB02+ machine for testing and NMI enable
+						
 			xor a
 			ld bc,#203B				//ZXi portselect
 			out (c),a
@@ -329,14 +378,46 @@ skipanim
 			ld	(txy51.cursor),bc
 			ld	hl,TEXT2
 			call txy51.txy
-			ld	bc,#9EB0
+			ld	bc,#B0DC
+			ld	(txy51.cursor),bc
+			ld	hl,TEXT5
+			call txy51.txy
+			ld	bc,#9EB3
 			ld	(txy51.cursor),bc
 			ld	hl,FW1
+			call txy51.txy
+			ld	bc,#9EBF
+			ld	(txy51.cursor),bc
+			ld	hl,FW2
 			call txy51.txy
 			ld	bc,#9ED8
 			ld	(txy51.cursor),bc
 			ld	hl,DATE
-			call txy51.txy		
+			call txy51.txy
+			;Core Time Stamp
+			ld	bc,#9E70
+			ld	(txy51.cursor),bc
+			ld	hl,COREFW1
+			call txy51.txy
+			ld	bc,#9E87
+			ld	(txy51.cursor),bc
+			ld	hl,COREFW2
+			call txy51.txy
+			ld	bc,#9E91
+			ld	(txy51.cursor),bc
+			ld bc,#203B
+			ld a,#FF
+			out (c),a
+			ld b,#27
+1			dec b
+			ld h,0
+			in l,(c)
+			push bc
+			call NUMBER1
+			pop bc
+			ld a,b
+			cp #24
+			jr nz, 1B
 
 			ld	bc,#5000
 			ld	(txy51.cursor),bc
@@ -375,6 +456,10 @@ skipanim
 			ld	(txy51.cursor),bc
 			ld	hl,CONF3
 			call txy51.txy
+			ld	bc,#9803
+			ld	(txy51.cursor),bc
+			ld	hl,CONF4
+			call txy51.txy
 		
 	
 //carymary2				
@@ -392,14 +477,96 @@ skipanim
 			call cf.PROHOD
 			set  7,(ix+79)			
 cferr		call txy51.txy
+; configuration tests
+			xor a
+			ld bc,#203B				//ZXi portselect
+			out (c),a
+			inc b
+			dec a					//HW - FF firmware
+			out (c),a
+			ei	
+			halt				//waiting for border to get relevant data
+			ld bc,65533			//real AY active?
+			ld a,2
+			out (c),a
+			ld b,#BF
+			out (c),a
+			ld b,#FF			
+			in a, (c)
+			cp 2
+			jr z,realayinstalled
+			ld bc,#203B
+			ld a,#81
+			out (c),a
+			inc b
+			in a,(c)
+			set 1,a				//enable reading of MB03+ AYs
+			out (c),a
+realayinstalled
+; profi interface setup - dedicated to Hood
+			xor a
+			ld bc,#01EF
+			out (c),a
+			inc a
+			inc b
+			out (c),a
 
+; set Led Matrix
+/*			ld bc,#203B
+			ld a,#4
+			out (c),a
+			inc b
+			ld a,1				// Stereo peaks
+			out (c),a*/
+//SetUp section
+			di
+			in a, (#53)
+			ex af,af'
+			ld a, #E0
+			out (#53),a
+			ld b,16
+			ld hl,#2000
+			xor a
+2			or (hl)
+			jr nz,3F
+			inc hl
+			djnz 2B
+			jr 8F   			//setup is empty use FPGA default
+3			ld b,4				// number of register to set
+			ld hl, setup_tab	
+4			ld a,(hl)
+			push bc
+			ld bc,#203B
+			out (c),a
+			inc b
+			inc hl
+			ld e, (hl)
+			inc hl
+			ld d, (hl)
+			inc hl
+			ld a,(de)
+			out (c),a
+			pop bc
+			djnz 4B
+			jr 8F
+setup_tab   db 4
+			dw #2004
+			db 9
+			dw #2009
+			db #A
+			dw #200A
+			db #B
+			dw #200B
+
+8			ex af,af'
+			out (#53),a
 
 loopkey		
 1			
 			xor a
 			ld bc,#203B				//ZXi portselect
 			out (c),a
-			ld bc,#213B
+			inc b
 			dec a					//HW - FF firmware
 			out (c),a
 			ei
@@ -426,7 +593,110 @@ loopkey
 ;			pop hl		
 			jr z,1B
 
-			cp "3"
+			cp "0"
+			jr nz,1F
+			ld a,9
+			ld bc,#203B				//test pattern
+			out (c),a
+			ld bc,#213B
+			ld a,#FF
+			out (c),a
+1			cp "9"
+			jr nz,1F
+			ld a,9
+			ld bc,#203B				//test text mode
+			out (c),a
+			ld bc,#213B
+			ld a,#FE
+			out (c),a
+1			cp "8"
+			jr nz,1F
+			ld a,9
+			ld bc,#203B				//text mode
+			out (c),a
+			ld bc,#213B
+			ld a,#80
+			out (c),a
+1			cp "7"
+			jr nz,1F
+			ld a,9
+			ld bc,#203B				//mode 1
+			out (c),a
+			ld bc,#213B
+			ld a,#01
+			out (c),a
+1			cp "6"
+			jr nz,1F
+			ld a,9
+			ld bc,#203B				//mode 2
+			out (c),a
+			ld bc,#213B
+			ld a,#02
+			out (c),a	
+1			cp "5"
+			jr nz,1F
+			ld a,9
+			ld bc,#203B				//mode 3
+			out (c),a
+			ld bc,#213B
+			ld a,#03
+			out (c),a									
+1			cp "P"
+			jr nz,1F
+			ld a,#A
+			ld bc,#203B				//Sync on
+			out (c),a
+			ld bc,#213B
+			in a,(c)
+			or 2
+			out (c),a
+1			cp "O"
+			jr nz,1F
+			ld a,#A
+			ld bc,#203B				//Sync off
+			out (c),a
+			ld bc,#213B
+			in a,(c)
+			and %11111101
+			out (c),a
+1			cp "L"
+			jr nz,1F
+			ld a,#A
+			ld bc,#203B				//DVI on
+			out (c),a
+			ld bc,#213B
+			in a,(c)
+			or 1
+			out (c),a
+1			cp "K"
+			jr nz,1F
+			ld a,#A
+			ld bc,#203B				//HDMI off
+			out (c),a
+			ld bc,#213B
+			in a,(c)
+			and %11111110
+			out (c),a	
+1			cp "S"					//SetUp/Bios
+			jr nz,1F
+			xor a
+			ld bc,#203B					//ZXi portselect
+			out (c),a
+			ld bc,#213B
+			ld a,255					//HW - FF - Firmware
+			out (c),a
+			xor a
+			out (#27),a
+			out (#67),a
+			ld a,22														
+			out (#07),a
+			inc a
+			out (#47),a
+			ld a,#60					//flash enable, read only
+			out (#53),a
+			rst 0
+
+1			cp "3"
 			jp nz,next1
 			call clean
 			ld bc,#B800
@@ -602,6 +872,22 @@ holdkey4	call iinkey.IINKEY
 			ld a,1					//HW - 1 - MB02+
 			out (c),a					
 			call 32768
+//autosys/autoexe
+			ld a,#61	;novy kod, opsano ze Shrekova Flashobootu
+			out (#17),a
+			ld a,#1E
+			rst #20		;sluzba .KILL
+			ld e,3
+			ld a,#13
+			rst #20
+			ld e,0
+			ld a,#14	;zvol disk 3, adresar 0
+			rst #20
+			ld a,#30
+			rst #20		;sluzba #30, start systemu. Pokud je autosys nalezen, dale se v kodu nepokracuje
+			/*ld a,#40	;soubor autosys nenalezen
+			out (#17),a	;tedy vykonej reset
+			jp #3906*/
 			jr 6F
 
 5			cp 'e'					// key e
@@ -660,7 +946,7 @@ holdkey4	call iinkey.IINKEY
 			jp 27000
 			
 8			cp 't'					// key t - zx diagnostics
-			jr nz, 9F				// no key
+			jr nz, 1F				// no key
 			xor a
 			ld bc,#203B				//ZXi portselect
 			out (c),a
@@ -677,6 +963,25 @@ holdkey4	call iinkey.IINKEY
 			ld a,%01100000	;enable flash write disable
 			out (#53),a
 			rst 0
+
+1			cp 6					// key shitf+2(capslock) - ESXDOS DivMMC warm start
+			jr nz, 9F
+			xor a
+//			out (23),a 
+			ld bc,#203B				//ZXi portselect
+			out (c),a
+			ld bc,#213B
+			ld a,2					//HW - 2 - DIVMMC
+			out (c),a
+			ld bc,#203B				//ZXi portselect 
+			ld a,2
+			out (c),a
+			ld bc,#213B
+			xor a					//IDE - 0 dissable
+			out (c),a			
+			out (#E3),a			//to force cold start zero $2dXX in page 0
+			jp #66
+
 9			cp '2'					// key 2 - Papaya DOS- ESXDOS DivMMC
 			jr nz, 10F
 
@@ -942,6 +1247,30 @@ userlevel	call txy51.txy
 			pop hl
 			inc hl
 			djnz 1B
+			;Core Time Stamp FULL
+			ld	bc,#4000
+			ld	(txy51.cursor),bc
+			ld	hl,COREFW1
+			call txy51.txy
+			ld	bc,#4017
+			ld	(txy51.cursor),bc
+			ld	hl,COREFW2
+			call txy51.txy
+			ld	bc,#4021
+			ld	(txy51.cursor),bc
+			ld bc,#203B
+			ld a,#FF
+			out (c),a
+			ld b,#27
+1			dec b
+			ld h,0
+			in l,(c)
+			push bc
+			call NUMBER1
+			pop bc
+			ld a,b
+			cp #21
+			jr nz, 1B
 
 			call iinkey.ANYKEY
 			jp 13B
@@ -1289,14 +1618,15 @@ zvukend
 */		 
 ; --------------- T E X T---------------------------------------
 TEXT0 	 	dc 16,69,"LMN128-Jan Kucera-Zlin/CZ"
-TEXT4 		db 16,71,"1:",16,6,"MB02+(BSDOS308a+EH) ",16,71,"e:",16,6,"bs128Kreset"
+TEXT4 		db 16,71,"1:",16,6,"MB02+(BSDOS308+EH) ",16,71,"e:",16,6,"bs128Kreset"
 			dc " "
 TEXT2	 	db 16,71,"2:",16,6,"DivMMC  ",16,71,"@:",16,6,"DivIDE  "
 			dc " "
 TEXT3    	db 16,71,"3:",16,6,"Ultimate BSDOS & esxDOS ",16,71,"d:",16,7,"Dev+ ",16,71,"t:",16,7,"diag ",16,71,"break:",16,7,"ZXROM  "
 			dc " "
 TEXT1    	dc 16,69,"MB03+ Ultimate firmware 1.28"
-
+TEXT5       db 16,71,"S:",16,7,"setup "
+			dc " "	
 STRIPS		db 16,66,32,32
 			db 16,70,32,32
 			db 16,68,32,32,32,32,32
@@ -1318,13 +1648,15 @@ HW6			db 16,3,"OTHERS: "
 			dc 16,7,"USB, Wifi ESP8266, Matrix 8x8 LEDs"
 
 CONF1		db 16,67,"CONFIGURATION: "
-			dc 16,7,"2.3"
+			dc 16,7,"3.0"
 CONF2		db 16,3,"3xAY: "
 			db 16,7,"ON  ",16,3,"SounDrive: ",16,7,"ON  ",16,3,"SAA1099: ",16,7,"ON  ",16,3,"Gen.Sound:"
 			dc 16,7,"ON"
 CONF3		db 16,3,"DMA: "
 			db 16,7,"ON  ",16,3,"IDE: ",16,7,"ON  ",16,3,"SD: ",16,7,"ON  ",16,3,"RTC: ",16,7,"ON ",16,3,"Wifi: "
 			dc 16,7,"ON"
+CONF4		db 16,3,"DigitalVideo: "
+			dc 16,7,"ON"			
 ADVS0		db 16,6,"User level: " 
 			dc 16,7," "			
 ADVS1		db 16,6,"OnTime: " 
@@ -1345,17 +1677,20 @@ LEVEL4		dc 16,5,"Enhanced"
 LEVEL5		dc 16,5,"Geek"
 LEVEL6		dc 16,5,"Guru"
 LEVEL7		dc 16,4,"Ultimate"						
-FW1			dc 16,0,"FW:1.28/"
+FW1			dc 16,7,"FW:"
+FW2			dc "1.28/"
+COREFW1		dc "Core:"
+COREFW2		dc "20"
 ESX1		dc 16,5,"esxDOS is loading"
 BSD1		dc 16,5,"BSDOS+EasyHDD is loading "
 BSD2		dc 16,5,"EasyHDD is loading "
-ULT1		db 16,5,"Brand new ",16,7,"BSDOS ",16,5,"is in progress of development.",32+128
+ULT1		db 16,5,"A brand new ",16,7,"BSDOS ",16,5,"is in progress of development.",32+128
 ULT2		db 16,6,"BUSY ",16,5,"- famous demos coder and author of BSDOS",32+128
-ULT3		dc 16,5,"for MB02+ will bring new version soon."
-ULT4		db 16,6,"Miguel ",16,5,"(Papaya Dezign) is in progress of deve-",32+128
-ULT5		db 16,5,"lopment of new ",16,7,"ESXDOS ",16,5,"ver. 0.9.x for MB03+ !!!",32+128
-ULT6		db 16,5,"New one included a lot of new features. LFN e.g.",32+128
-ULT7		dc 16,4,"Due to MB03+ capabilities both system will be "
+ULT3		dc 16,5,"for MB02+ will bring a new version soon."
+ULT4		db 16,6,"Miguel ",16,5,"(Papaya Dezign) is going to develop a new",32+128
+ULT5		db 16,7,"ESXDOS ",16,5,"ver. 0.9.x for MB03+ Ultimate with",32+128
+ULT6		db 16,5,"lots of new features, incl. Long filename (LFN).",32+128
+ULT7		dc 16,4,"Thanks to MB03+ capabilities both systems will be "
 ULT8		dc 16,4,"more flexible and faster."
 
 //test#3FFD   db 32
