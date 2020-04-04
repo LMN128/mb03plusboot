@@ -5,6 +5,15 @@
 ;███████████████ V A R I A B L E S ██████████████████████████████████████		
 DMA 		equ #0B
 ULA			equ #FE
+ZXi_port0	equ #703B
+ZXi_port1	equ #713B
+ZXi_port2	equ #723B
+ZXi_port3	equ #733B
+ZXi_port4	equ #743B
+ZXi_port5	equ #753B
+ZXi_port6	equ #763B
+ZXi_port7	equ #773B
+ZXi_port8	equ #783B
 ;███████████████ M A I N  C O D E ███████████████████████████████████████	
 			org 49152		
 maincode
@@ -96,6 +105,7 @@ wfbusy
 wifistring  db "AT+RFPOWER=0",13,10
 
 2									
+/*
 ; temporary switch to MB02+ machine for testing and NMI enable
 						
 			xor a
@@ -104,6 +114,7 @@ wifistring  db "AT+RFPOWER=0",13,10
 			ld bc,#213B
 			ld a,1					//HW - 1 - MB02+
 			out (c),a
+*/			
 			call cls.CLS
 			ld   a,7
 			ld   HL,22528
@@ -326,24 +337,66 @@ follow1		ld de,#050F
 			pop af
 			dec a
 			jr nz,1B
-/*//Ultimate		
-			ld de,#0500
-	        ld hl,dots+38*0
-			ld a,6				// number of sprites in animations
-2			push af
-			push de
-			push hl
-//			call sprite2.OK
-			ld b,9
-			call wait.wait
-			pop hl
-			pop de
-			inc e
-			inc e
-			pop af
-			dec a
-			jr nz,2B */
-skipanim			
+
+skipanim	
+
+//SetUp section
+			di
+			in a, (#53)
+			ex af,af'
+			ld a, #E0
+			out (#53),a
+			ld b,16
+			ld hl,#2000
+			xor a
+2			or (hl)
+			jr nz,3F
+			inc hl
+			djnz 2B
+			jr 8F   			//setup is empty use FPGA default
+3			ld b,10				// number of register to set
+			ld hl, setup_tab	
+4			ld a,(hl)
+			push bc
+			ld bc,#203B
+			out (c),a
+			inc b
+			inc hl
+			ld e, (hl)
+			inc hl
+			ld d, (hl)
+			inc hl
+			ld a,(de)
+			out (c),a
+			pop bc
+			djnz 4B
+			jr 8F
+setup_tab   db 1
+			dw #2001
+			db 4
+			dw #2004
+			db 6
+			dw #2006
+			db 9
+			dw #2009
+			db #A
+			dw #200A
+			db #B
+			dw #200B
+			db #C
+			dw #200C
+			db #D
+			dw #200D
+			db #F
+			dw #200F
+			db #10
+			dw #2010
+
+8			ex af,af'
+			out (#53),a
+//End Setup section
+
+
 			ld de,#0000
 	    	ld hl,MB03pluslogo
 			call sprite2.OK
@@ -405,10 +458,10 @@ skipanim
 			call txy51.txy
 			ld	bc,#9E91
 			ld	(txy51.cursor),bc
-			ld bc,#203B
+			ld bc,ZXi_port0
 			ld a,#FF
 			out (c),a
-			ld b,#27
+			ld b,high ZXi_port7
 1			dec b
 			ld h,0
 			in l,(c)
@@ -416,7 +469,7 @@ skipanim
 			call NUMBER1
 			pop bc
 			ld a,b
-			cp #24
+			cp high ZXi_port4
 			jr nz, 1B
 
 			ld	bc,#5000
@@ -511,55 +564,6 @@ realayinstalled
 			inc b
 			out (c),a
 
-; set Led Matrix
-/*			ld bc,#203B
-			ld a,#4
-			out (c),a
-			inc b
-			ld a,1				// Stereo peaks
-			out (c),a*/
-//SetUp section
-			di
-			in a, (#53)
-			ex af,af'
-			ld a, #E0
-			out (#53),a
-			ld b,16
-			ld hl,#2000
-			xor a
-2			or (hl)
-			jr nz,3F
-			inc hl
-			djnz 2B
-			jr 8F   			//setup is empty use FPGA default
-3			ld b,4				// number of register to set
-			ld hl, setup_tab	
-4			ld a,(hl)
-			push bc
-			ld bc,#203B
-			out (c),a
-			inc b
-			inc hl
-			ld e, (hl)
-			inc hl
-			ld d, (hl)
-			inc hl
-			ld a,(de)
-			out (c),a
-			pop bc
-			djnz 4B
-			jr 8F
-setup_tab   db 4
-			dw #2004
-			db 9
-			dw #2009
-			db #A
-			dw #200A
-			db #B
-			dw #200B
-
-8			ex af,af'
-			out (#53),a
 
 loopkey		
 1			
@@ -1258,10 +1262,10 @@ userlevel	call txy51.txy
 			call txy51.txy
 			ld	bc,#4021
 			ld	(txy51.cursor),bc
-			ld bc,#203B
+			ld bc,ZXi_port0
 			ld a,#FF
 			out (c),a
-			ld b,#27
+			ld b,high ZXi_port7
 1			dec b
 			ld h,0
 			in l,(c)
@@ -1269,7 +1273,7 @@ userlevel	call txy51.txy
 			call NUMBER1
 			pop bc
 			ld a,b
-			cp #21
+			cp high ZXi_port1
 			jr nz, 1B
 
 			call iinkey.ANYKEY
