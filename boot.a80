@@ -65,7 +65,7 @@ ramcode
 			jr z,wfon
 			jr 2F
 wfon		ex af,af'
-			ld bc,#203B
+			ld bc,ZXi_port0
 			ld a,5
 			out (c),a
 			inc b
@@ -109,9 +109,9 @@ wifistring  db "AT+RFPOWER=0",13,10
 ; temporary switch to MB02+ machine for testing and NMI enable
 						
 			xor a
-			ld bc,#203B				//ZXi portselect
+			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,1					//HW - 1 - MB02+
 			out (c),a
 */			
@@ -354,11 +354,11 @@ skipanim
 			inc hl
 			djnz 2B
 			jr 8F   			//setup is empty use FPGA default
-3			ld b,10				// number of register to set
+3			ld b,12				// number of register to set
 			ld hl, setup_tab	
 4			ld a,(hl)
 			push bc
-			ld bc,#203B
+			ld bc,ZXi_port0
 			out (c),a
 			inc b
 			inc hl
@@ -391,6 +391,10 @@ setup_tab   db 1
 			dw #200F
 			db #10
 			dw #2010
+			db #11
+			dw #2011
+			db #12
+			dw #2012
 
 8			ex af,af'
 			out (#53),a
@@ -532,7 +536,7 @@ setup_tab   db 1
 cferr		call txy51.txy
 ; configuration tests
 			xor a
-			ld bc,#203B				//ZXi portselect
+			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
 			inc b
 			dec a					//HW - FF firmware
@@ -547,10 +551,14 @@ cferr		call txy51.txy
 			ld b,#FF			
 			in a, (c)
 			cp 2
-			jr z,realayinstalled
-			ld bc,#203B
-			ld a,#81
+			jr z,realayinstalled //if real ay present skip it
+			ld bc,ZXi_port0
+			ld a,#01
 			out (c),a
+			inc b
+			in a,(c)
+			bit 1,a
+			jr z,realayinstalled //if 3xAY disabled skip it
 			inc b
 			in a,(c)
 			set 1,a				//enable reading of MB03+ AYs
@@ -568,16 +576,16 @@ realayinstalled
 loopkey		
 1			
 			xor a
-			ld bc,#203B				//ZXi portselect
+			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
 			inc b
 			dec a					//HW - FF firmware
 			out (c),a
 			ei
 /*			xor a
-			ld bc,#203B
+			ld bc,ZXi_port0
 			out (c),a
-			ld bc,#273B
+			ld bc,ZXi_port7
 			in a,(c)
 			cp h
 			ld h,a
@@ -587,9 +595,9 @@ loopkey
 //			out (254),a
 			di
 			xor a
-			ld bc,#203B				//ZXi portselect
+			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,1					//HW - 1 MB02+
 			out (c),a	
 			call clock		
@@ -600,93 +608,93 @@ loopkey
 			cp "0"
 			jr nz,1F
 			ld a,9
-			ld bc,#203B				//test pattern
+			ld bc,ZXi_port0				//test pattern
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,#FF
 			out (c),a
 1			cp "9"
 			jr nz,1F
 			ld a,9
-			ld bc,#203B				//test text mode
+			ld bc,ZXi_port0				//test text mode
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,#FE
 			out (c),a
 1			cp "8"
 			jr nz,1F
 			ld a,9
-			ld bc,#203B				//text mode
+			ld bc,ZXi_port0				//text mode
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,#80
 			out (c),a
 1			cp "7"
 			jr nz,1F
 			ld a,9
-			ld bc,#203B				//mode 1
+			ld bc,ZXi_port0				//mode 1
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,#01
 			out (c),a
 1			cp "6"
 			jr nz,1F
 			ld a,9
-			ld bc,#203B				//mode 2
+			ld bc,ZXi_port0				//mode 2
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,#02
 			out (c),a	
 1			cp "5"
 			jr nz,1F
 			ld a,9
-			ld bc,#203B				//mode 3
+			ld bc,ZXi_port0				//mode 3
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,#03
 			out (c),a									
 1			cp "P"
 			jr nz,1F
 			ld a,#A
-			ld bc,#203B				//Sync on
+			ld bc,ZXi_port0				//Sync on
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			in a,(c)
 			or 2
 			out (c),a
 1			cp "O"
 			jr nz,1F
 			ld a,#A
-			ld bc,#203B				//Sync off
+			ld bc,ZXi_port0				//Sync off
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			in a,(c)
 			and %11111101
 			out (c),a
 1			cp "L"
 			jr nz,1F
 			ld a,#A
-			ld bc,#203B				//DVI on
+			ld bc,ZXi_port0				//DVI on
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			in a,(c)
 			or 1
 			out (c),a
 1			cp "K"
 			jr nz,1F
 			ld a,#A
-			ld bc,#203B				//HDMI off
+			ld bc,ZXi_port0				//HDMI off
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			in a,(c)
 			and %11111110
 			out (c),a	
 1			cp "S"					//SetUp/Bios
 			jr nz,1F
 			xor a
-			ld bc,#203B					//ZXi portselect
+			ld bc,ZXi_port0					//ZXi portselect
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,255					//HW - FF - Firmware
 			out (c),a
 			xor a
@@ -699,7 +707,78 @@ loopkey
 			ld a,#60					//flash enable, read only
 			out (#53),a
 			rst 0
-
+1			cp "A"						//UserApps-0
+			jr nz,1F
+			xor a
+			ld bc,ZXi_port0				//ZXi portselect
+			out (c),a
+			ld bc,ZXi_port1
+			dec a						//HW - FF - Firmware
+			out (c),a
+			xor a
+			out (#27),a
+			out (#67),a
+			ld a,64														
+			out (#07),a
+			inc a
+			out (#47),a
+			ld a,#60					//flash enable, read only
+			out (#53),a
+			rst 0
+1			cp "B"						//UserApps-1
+			jr nz,1F
+			xor a
+			ld bc,ZXi_port0				//ZXi portselect
+			out (c),a
+			ld bc,ZXi_port1
+			dec a						//HW - FF - Firmware
+			out (c),a
+			xor a
+			out (#27),a
+			out (#67),a
+			ld a,66														
+			out (#07),a
+			inc a
+			out (#47),a
+			ld a,#60					//flash enable, read only
+			out (#53),a
+			rst 0
+1			cp "C"						//UserApps-2
+			jr nz,1F
+			xor a
+			ld bc,ZXi_port0				//ZXi portselect
+			out (c),a
+			ld bc,ZXi_port1
+			dec a						//HW - FF - Firmware
+			out (c),a
+			xor a
+			out (#27),a
+			out (#67),a
+			ld a,68														
+			out (#07),a
+			inc a
+			out (#47),a
+			ld a,#60					//flash enable, read only
+			out (#53),a
+			rst 0
+1			cp "D"						//UserApps-3
+			jr nz,1F
+			xor a
+			ld bc,ZXi_port0				//ZXi portselect
+			out (c),a
+			ld bc,ZXi_port1
+			dec a						//HW - FF - Firmware
+			out (c),a
+			xor a
+			out (#27),a
+			out (#67),a
+			ld a,70														
+			out (#07),a
+			inc a
+			out (#47),a
+			ld a,#60					//flash enable, read only
+			out (#53),a
+			rst 0						
 1			cp "3"
 			jp nz,next1
 			call clean
@@ -752,9 +831,9 @@ holdkey5	call iinkey.IINKEY
 next1		cp 11h					; break
 			jr nz,2F				; no break	
 			xor a
-			ld bc,#203B				//ZXi portselect
+			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 									//HW - 0
 			out (c),a									
 			ld bc,8189				;ZX128+2A rom
@@ -791,9 +870,9 @@ holdkey3	call iinkey.IINKEY
 			ld b,6					//number of pages to transfer					
 22			push bc
 			xor a
-			ld bc,#203B					//ZXi portselect
+			ld bc,ZXi_port0					//ZXi portselect
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,255					//HW - FF - Firmware
 			out (c),a
 			xor a
@@ -814,7 +893,7 @@ holdkey3	call iinkey.IINKEY
 			ld bc,16384
 			ldir
 
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,1						//HW - 1 - MB02+
 			out (c),a
 			pop bc
@@ -856,9 +935,9 @@ holdkey4	call iinkey.IINKEY
 			jr nz,holdkey4
 
 4			xor a
-			ld bc,#203B					//ZXi portselect
+			ld bc,ZXi_port0					//ZXi portselect
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,255					//HW - FF - Firmware
 			out (c),a
 			xor a
@@ -872,7 +951,7 @@ holdkey4	call iinkey.IINKEY
 			ld de,32768
 			ld bc,16384
 			ldir
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,1					//HW - 1 - MB02+
 			out (c),a					
 			call 32768
@@ -899,9 +978,9 @@ holdkey4	call iinkey.IINKEY
 
 6
 			xor a
-			ld bc,#203B				//ZXi portselect
+			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,1					//HW - 1 - MB02+
 			out (c),a			
 			ld a,64					// 128K reset in BSROM140
@@ -924,9 +1003,9 @@ holdkey4	call iinkey.IINKEY
 			ldir
 
 			xor a
-			ld bc,#203B					//ZXi portselect
+			ld bc,ZXi_port0					//ZXi portselect
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,255					//HW - FF - Firmware
 			out (c),a
 			xor a
@@ -952,9 +1031,9 @@ holdkey4	call iinkey.IINKEY
 8			cp 't'					// key t - zx diagnostics
 			jr nz, 1F				// no key
 			xor a
-			ld bc,#203B				//ZXi portselect
+			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,255				//HW - FF - Firmware
 			out (c),a
 			xor a
@@ -972,15 +1051,15 @@ holdkey4	call iinkey.IINKEY
 			jr nz, 9F
 			xor a
 //			out (23),a 
-			ld bc,#203B				//ZXi portselect
+			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,2					//HW - 2 - DIVMMC
 			out (c),a
-			ld bc,#203B				//ZXi portselect 
+			ld bc,ZXi_port0				//ZXi portselect 
 			ld a,2
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			xor a					//IDE - 0 dissable
 			out (c),a			
 			out (#E3),a			//to force cold start zero $2dXX in page 0
@@ -1010,15 +1089,15 @@ holdkey1	call iinkey.IINKEY
 
 			xor a
 //			out (23),a 
-			ld bc,#203B				//ZXi portselect
+			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,2					//HW - 2 - DIVMMC
 			out (c),a
-			ld bc,#203B				//ZXi portselect 
+			ld bc,ZXi_port0				//ZXi portselect 
 			ld a,2
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			xor a					//IDE - 0 dissable
 			out (c),a
 			ld a,128
@@ -1037,9 +1116,9 @@ div_erase	out (#E3),a
 10		cp "R"					//restart firmware
 			jr nz, 11F
 			xor a
-			ld bc,#203B				//ZXi portselect
+			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,255				//HW - FF - Firmware
 			out (c),a
 			xor a
@@ -1054,6 +1133,12 @@ div_erase	out (#E3),a
 			rst 0
 11		cp "r"					//restart to ramcode
 			jr nz,12F
+			xor a
+			ld bc,ZXi_port0				//ZXi portselect
+			out (c),a
+			inc b
+			dec a				//HW - FF - Firmware
+			out (c),a
 			jp ramcode
 12		cp "T"					//advance system info
 			jp nz,14F
@@ -1071,10 +1156,10 @@ div_erase	out (#E3),a
 			call sprite2.OK
 
 			xor a
-			ld bc,#203B				//ZXi portselect
+			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
 			ld a,#FF
-			ld bc,#213B			
+			ld bc,ZXi_port1			
 			out (c),a
 			ld a,#E0				//FRAM active
 			out (#53),a
@@ -1302,23 +1387,23 @@ holdkey2	call iinkey.IINKEY
 			jr nz,holdkey2	
 			xor a
 //			out (23),a
-			ld bc,#203B				//ZXi portselect
+			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,3					//HW - 3 - DIVMMC/DIVIDE
 			out (c),a
 
-			ld bc,#203B				//ZXi portselect 
+			ld bc,ZXi_port0				//ZXi portselect 
 			ld a,2
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,2					//IDE - 2 PVL ports- DIVMMC/DIVIDE
 			out (c),a
 
-			ld bc,#203B				//ZXi portselect 
+			ld bc,ZXi_port0				//ZXi portselect 
 			ld a,1					//Audio
 			out (c),a
-			ld bc,#213B
+			ld bc,ZXi_port1
 			ld a,%11101111  		//dissable GS
 			out (c),a
 
@@ -1369,9 +1454,9 @@ NUM_PRIC sbc  hl,de
 clock
 			ld ix,clockbuff
 			xor a
-			ld bc,#203B
+			ld bc,ZXi_port0
 			out (c),a
-			ld bc,#273B
+			ld bc,ZXi_port7
 			in a,(c)
 			push af
 			and #0F
@@ -1386,9 +1471,9 @@ clock
 			or 48
 			ld (ix+20),a		//10sec
 			ld a,1
-			ld bc,#203B
+			ld bc,ZXi_port0
 			out (c),a
-			ld bc,#273B
+			ld bc,ZXi_port7
 			in a,(c)
 			push af			
 			and #0F
@@ -1403,9 +1488,9 @@ clock
 			or 48
 			ld (ix+17),a		//10min
 			ld a,2
-			ld bc,#203B
+			ld bc,ZXi_port0
 			out (c),a
-			ld bc,#273B
+			ld bc,ZXi_port7
 			in a,(c)
 			push af
 			and #0F
@@ -1420,9 +1505,9 @@ clock
 			or 48
 			ld (ix+14),a		//10hour
 			ld a,3
-			ld bc,#203B
+			ld bc,ZXi_port0
 			out (c),a
-			ld bc,#273B
+			ld bc,ZXi_port7
 			in a,(c)
 			dec a
 			and #7
@@ -1436,9 +1521,9 @@ clock
 			ld bc,4
 			ldir
 			ld a,4
-			ld bc,#203B
+			ld bc,ZXi_port0
 			out (c),a
-			ld bc,#273B
+			ld bc,ZXi_port7
 			in a,(c)
 			push af
 			and #0F
@@ -1453,9 +1538,9 @@ clock
 			or 48
 			ld (ix+0),a		//10day	
 			ld a,5
-			ld bc,#203B
+			ld bc,ZXi_port0
 			out (c),a
-			ld bc,#273B
+			ld bc,ZXi_port7
 			in a,(c)
 			push af
 			and #0F
@@ -1470,9 +1555,9 @@ clock
 			or 48
 			ld (ix+3),a		//10month
 			ld a,6
-			ld bc,#203B
+			ld bc,ZXi_port0
 			out (c),a
-			ld bc,#273B
+			ld bc,ZXi_port7
 			in a,(c)
 			push af
 			and #0F
@@ -1622,7 +1707,7 @@ zvukend
 */		 
 ; --------------- T E X T---------------------------------------
 TEXT0 	 	dc 16,69,"LMN128-Jan Kucera-Zlin/CZ"
-TEXT4 		db 16,71,"1:",16,6,"MB02+(BSDOS308+EH) ",16,71,"e:",16,6,"bs128Kreset"
+TEXT4 		db 16,71,"1:",16,6,"MB02+(BSDOS308+EH) ",16,71,"e:",16,6,"bs128Kreset ",16,71,"   ABCD:",16,7,"UserApps"
 			dc " "
 TEXT2	 	db 16,71,"2:",16,6,"DivMMC  ",16,71,"@:",16,6,"DivIDE  "
 			dc " "
@@ -1652,14 +1737,14 @@ HW6			db 16,3,"OTHERS: "
 			dc 16,7,"USB, Wifi ESP8266, Matrix 8x8 LEDs"
 
 CONF1		db 16,67,"CONFIGURATION: "
-			dc 16,7,"3.0"
+			dc 16,7,"3.2"
 CONF2		db 16,3,"3xAY: "
 			db 16,7,"ON  ",16,3,"SounDrive: ",16,7,"ON  ",16,3,"SAA1099: ",16,7,"ON  ",16,3,"Gen.Sound:"
 			dc 16,7,"ON"
 CONF3		db 16,3,"DMA: "
 			db 16,7,"ON  ",16,3,"IDE: ",16,7,"ON  ",16,3,"SD: ",16,7,"ON  ",16,3,"RTC: ",16,7,"ON ",16,3,"Wifi: "
 			dc 16,7,"ON"
-CONF4		db 16,3,"DigitalVideo: "
+CONF4		db 16,3,"DigitalVideoAudio: "
 			dc 16,7,"ON"			
 ADVS0		db 16,6,"User level: " 
 			dc 16,7," "			
