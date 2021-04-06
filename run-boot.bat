@@ -1,3 +1,3 @@
 sjasmplus boot.a80 --lst=boot.lst --lstlab   
-start boot.sna
+start c:\LnxSpectrum\LnxSpectrum.exe boot.sna
 timeout 10

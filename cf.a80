@@ -333,8 +333,8 @@ RD1S
          defb %01111101			;WR0 A->B, transfer
          defw P_DAT				;source port
          defw 511				;lenght
-         defb %00101100			;WR1 A-port,A-fixed
-         defb %00010000			;WR2 B-memory, B-increment
+         defb %00101100			;WR1 A-port,A-fixed - Standard Timing
+         defb %00010000			;WR2 B-memory, B-increment - Standard Timing
          defb %10101101			;WR4 continuous,
 DMADR1   defw 0					;destination
          defb %10010010			;WR5 ready low,CE/WAIT,stop on end of block
