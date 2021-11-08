@@ -4,7 +4,7 @@ wait
 //	ex (SP),IX
 	dec hl
 	ld a,h
-	cp l
+	or l
 	jr nz,wait
 	djnz wait
 	ret

@@ -41,7 +41,7 @@ nn2	ld	b,h
 	ex	de,hl
 	ld	b,#1e		;LMN (was #20) speed
 wait	djnz	wait
-	jr	nn2
+	jp	nn2
 end
 ;		ret   ; for testing
 ;	OUTEND

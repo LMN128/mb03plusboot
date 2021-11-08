@@ -1,6 +1,7 @@
 	MODULE 	boot
 	DEVICE 	ZXSPECTRUM48
 	OUTPUT	boot.cde
+
 	
 ;███████████████ V A R I A B L E S ██████████████████████████████████████		
 DMA 		equ #0B
@@ -16,6 +17,9 @@ ZXi_port7	equ #773B
 
 g_ZXi_port0	equ #7C3B
 g_ZXi_port1	equ #7D3B
+
+u_ZXi_port0 equ #FC3B
+u_ZXi_port1 equ #FD3B
 ;███████████████ M A I N  C O D E ███████████████████████████████████████	
 			org 49152		
 maincode
@@ -59,7 +63,21 @@ ramcodeinrom
 ramcode		
 			di						; for sna test
 			ld sp,0					; for sna test
-								
+
+			// Setup keyboard first part
+/*			ld bc,ZXi_port0			;MB03+
+			ld a,#11				;Mouse/Keyboard
+			out (c),a
+			inc b
+			ld a,#03				;set keyboard
+			out (c),a
+
+			ld bc,u_ZXi_port0		;Uno
+			ld a,4					;SCANCODE reg_number
+			out (c),a
+			inc b
+			ld a,#FF				;reset keyboard
+			out (c),a	*/							
 /*
 ; temporary switch to MB02+ machine for testing and NMI enable
 						
@@ -143,8 +161,8 @@ ramcode
 			call wide1
 				call iinkey.IINKEY		; waiting for key
 				jp nz,skipanim			
-			ld b,1
-			call wait.wait
+//			ld b,1
+//			call wait.wait
 			ld a,68
 			ld (txy32.T32_ATT),a
 			ld	bc,#2A2A
@@ -186,8 +204,8 @@ wide1		push af
 			ld	(txy32.cursor),de
 			ld a,131
 			call txy32.xy
-			ld b,4
-			call wait.wait
+//			ld b,4
+//			call wait.wait
 			pop de
 			pop bc
 			pop af
@@ -199,7 +217,7 @@ wide1		push af
 			
 fall1		push bc
 			call singledot
-			ld b,1
+//			ld b,1
 //
 //			call wait.wait
 			pop bc
@@ -210,7 +228,7 @@ fall1		push bc
 			ret
 fall2		push bc
 			call halfdot
-			ld b,1
+//			ld b,1
 //			ld hl,1
 //			call wait.wait
 			pop bc
@@ -222,7 +240,7 @@ fall2		push bc
 	
 fall3		push bc
 			call halfdot3
-			ld b,1
+//			ld b,1
 //			ld hl,1
 //			call wait.wait
 			pop bc
@@ -234,7 +252,7 @@ fall3		push bc
 
 fall4		push bc
 			call halfdot4
-			ld b,1
+//			ld b,1
 //			ld hl,1
 //			call wait.wait
 			pop bc
@@ -286,7 +304,8 @@ follow1		ld de,#050F
 			push de
 			push hl
 			call sprite2.OK
-			ld b,12
+			ld b,1
+			ld hl,#0E00
 			call wait.wait
 			pop hl
 			ld de,20			// lenght of sprite2
@@ -320,7 +339,7 @@ skipanim
 			inc hl
 			djnz 2B
 			jr 8F   			//setup is empty use FPGA default
-3			ld b,15				// number of register to set
+3			ld b,21				// number of register to set
 			ld hl, setup_tab	
 4			ld a,(hl)
 			push bc
@@ -345,6 +364,8 @@ setup_tab   db 1
 			dw #2005
 			db 6
 			dw #2006
+			db 7
+			dw #2007
 			db 9
 			dw #2009
 			db #A
@@ -363,8 +384,18 @@ setup_tab   db 1
 			dw #2011
 			db #12
 			dw #2012
+			db #18
+			dw #2018
+			db #19
+			dw #2019
 			db #20
 			dw #2020
+			db #2C
+			dw #202C
+			db #2D
+			dw #202D
+			db #3F
+			dw #203F
 			db #40
 			dw #2040
 
@@ -582,6 +613,41 @@ realayinstalled
 			inc b
 			out (c),a
 
+// Setup keyboard second part
+/*			xor a
+			ld bc,ZXi_port0			//ZXi portselect
+			out (c),a
+			inc b
+			dec a					//HW - FF firmware
+			out (c),a
+			ei
+
+			ld bc,u_ZXi_port0		;Uno
+			ld a,#4					;SCANCODE reg_number
+			out (c),a
+			inc b
+			ld e,2					;wait time - sum with statup max 1s
+1			in a,(c)
+			cp #AA					
+			jr z,2F					;BAT keyboard initial test OK
+			halt
+			in	a, (254)
+			cpl
+			and	1Fh
+			jr  nz,3F				;if press any key skip
+			dec e
+			jr nz,1B
+//			jr 3F					; send it always to set in case keyboard is connected to eLeMeNt ZX
+2			ld a,#F6				;Keyboard - set default parameters
+			out (c),a
+			halt
+			halt
+			ld a,#ED 				;Keyboard - set LED
+			out (c),a
+			halt
+			ld a,#02 				;Keyboard - set LED - Num lock on
+			out (c),a			
+3*/
 
 loopkey		
 1			
@@ -891,6 +957,12 @@ loopkey
 			call txy51.txy											
 holdkey5	call iinkey.IINKEY
 			jr z,holdkey5			
+			xor a
+			ld bc,ZXi_port0				//ZXi portselect
+			out (c),a
+			inc b
+			dec a				//HW - FF - Firmware
+			out (c),a
 			jp ramcode
 
 next1		cp 11h					; break
@@ -1880,12 +1952,12 @@ HW6			db 16,3,"OTHERS: "
 			dc 16,7,"USB, Wifi ESP8266, Matrix 8x8 LEDs"
 
 CONF1		db 16,67,"CONFIGURATION: "
-			dc 16,7,"3.2"
+			dc 16,7,"3.3"
 CONF2		db 16,7,"3xAY "
 			db 16,3,"| ",16,7,"SounDrive ",16,3,"| ",16,7,"SAA1099 ",16,3,"| ",16,7,"Gen.Sound ",16,3,"| ",16,7,"DMA ",16,3,"| "
 			dc 16,7,"IDE:"
 CONF3		
-			db 16,7,"SD ",16,3,"| ",16,7,"RTC ",16,3,"| ",16,7,"Wifi ",16,3,"| ",16,7,"DigitalVideoAudio  ",16,3,"| ",16,7,"TSFM"
+			db 16,7,"SD ",16,3,"| ",16,7,"RTC ",16,3,"| ",16,7,"Wifi ",16,3,"| ",16,7,"DigitalVideoAudio  ",16,3,"| ",16,7,"TSFM  ",16,3,"| ",16,7,"SID"
 			dc 16,7," "
 CONF4		
 			dc 16,7," "			
