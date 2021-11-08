@@ -331,15 +331,15 @@ skipanim
 			ex af,af'
 			ld a, #E0
 			out (#53),a
-			ld b,16
+/*			ld b,16
 			ld hl,#2000
 			xor a
 2			or (hl)
 			jr nz,3F
 			inc hl
 			djnz 2B
-			jr 8F   			//setup is empty use FPGA default
-3			ld b,21				// number of register to set
+			jr 8F   			//setup is empty use FPGA default*/
+3			ld b,1				// number of register to set
 			ld hl, setup_tab	
 4			ld a,(hl)
 			push bc
@@ -356,7 +356,9 @@ skipanim
 			pop bc
 			djnz 4B
 			jr 8F
-setup_tab   db 1
+setup_tab   db 4
+			dw #2004			
+/*setup_tab   db 1
 			dw #2001
 			db 4
 			dw #2004
@@ -397,7 +399,7 @@ setup_tab   db 1
 			db #3F
 			dw #203F
 			db #40
-			dw #2040
+			dw #2040*/
 
 8			ex af,af'
 			out (#53),a
