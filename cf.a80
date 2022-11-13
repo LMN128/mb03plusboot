@@ -276,7 +276,7 @@ HEA_REG  ld   a,%11100000
 
 TST_BSY
          push hl
-         ld   hl,#4000 ;shorter timeout, was #0000
+         ld   hl,#0000 ;shorter timeout, was #0000
 TST1
          dec  hl
          ld   a,l

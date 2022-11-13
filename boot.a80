@@ -1,7 +1,6 @@
 	MODULE 	boot
 	DEVICE 	ZXSPECTRUM48
 	OUTPUT	boot.cde
-
 	
 ;███████████████ V A R I A B L E S ██████████████████████████████████████		
 DMA 		equ #0B
@@ -32,7 +31,7 @@ boot		di
 			xor	a
 			ld	i, a
 			out (ULA),a
-			ld	hl, 5AFFh
+/*			ld	hl, 5AFFh
 			ld	de, 5AFEh
 			ld	bc, 1AFFh
 			ld	(hl), a
@@ -41,6 +40,7 @@ boot		di
 			cpl
 			and	1Fh
 			jr  nz,endramtest		;skip Busy effect
+			*/
 			jr boot2
 			db "LMN128"
 //WARNING max #38 bytes!!!!			
@@ -49,7 +49,7 @@ endboot		BLOCK #38-endboot,0
 im1			ei
 			ret					
 boot2
-	INCLUDE "effect.a80"			; Busy nonbootdisk effect
+//	INCLUDE "effect.a80"			; Busy nonbootdisk effect
 
 endramtest	ld hl,ramcodeinrom
 			ld de,ramcode
@@ -63,6 +63,34 @@ ramcodeinrom
 ramcode		
 			di						; for sna test
 			ld sp,0					; for sna test
+//test Enter key to start full firmware
+			ld a,%10111111			//A14 - row with enter key 
+			in a,(#FE)
+			and 1
+			jr z,enterpress
+
+			ld bc,ZXi_port0
+			ld a,#22				//StartUp order
+			out (c),a
+			inc b	
+			in a,(c)	
+enterpress	ld (suorder+1),a		//save startup order
+			
+suorder		ld a,0
+			or a
+			call z,effect.begin
+
+			call cls.CLS
+			ld   a,7
+			ld   HL,22528
+			ld   DE,22529
+			ld   BC,767
+			ld   (HL),a
+			ldir
+
+			ld a,(suorder+1)
+			or a
+			jp nz,skipanim
 
 			// Setup keyboard first part
 /*			ld bc,ZXi_port0			;MB03+
@@ -88,13 +116,7 @@ ramcode
 			ld a,1					//HW - 1 - MB02+
 			out (c),a
 */			
-			call cls.CLS
-			ld   a,7
-			ld   HL,22528
-			ld   DE,22529
-			ld   BC,767
-			ld   (HL),a
-			ldir
+
 				call iinkey.IINKEY		; waiting for key
 				jp nz,skipanim
 			ld a,0
@@ -405,7 +427,81 @@ setup_tab   db 4
 			out (#53),a
 //End Setup section
 
+// set wifi module to gently power consumption
+wfon		
+			ld bc,ZXi_port0
+			ld a,5
+			out (c),a
+			inc b
+			in a,(c)			
+			rrca
+			jr nc,2F	//not enable
+			rrca
+			jr nc,2F	//not low rfpower
+			ld b,1					; wftimeout	
+wfloop1		ld de,0							
+wftimeout	dec de
+			ld a,d
+			or e
+			jr nz, wftimeout
+			djnz wfloop1
+			ld b,#13				; wifi ZXi TX port
+			ld hl,wifistring
 
+1			ld a,(hl)
+			out (c),a
+			ex af,af'
+wfbusy		
+			in a,(c)
+			bit 1,a					
+			jr nz,wfbusy
+			ex af,af'						
+			inc hl
+			cp 10			//test end of string
+			jr nz,1B	
+			jr 2F
+wifistring  db "AT+RFPOWER=0",13,10
+
+2	
+//AY test - is available internal AY?
+			xor a
+			ld bc,ZXi_port0				//ZXi portselect
+			out (c),a
+			inc b
+			dec a					//HW - FF firmware
+			out (c),a
+			ei	
+			halt				//waiting for border to get relevant data
+			di
+			ld bc,65533			//real AY active?
+			ld a,2
+			out (c),a
+			ld b,#BF
+			out (c),a
+			ld b,#FF			
+			in a, (c)
+			cp 2
+			jr z,realayinstalled //if real ay present skip it
+			ld bc,ZXi_port0
+			ld a,#01
+			out (c),a
+			inc b
+			in a,(c)
+			bit 1,a
+			jr z,realayinstalled //if 3xAY disabled skip it
+			inc b
+			in a,(c)
+			set 1,a				//enable reading of MB03+ AYs
+			out (c),a
+realayinstalled
+// profi interface setup - dedicated to Hood
+			xor a
+			ld bc,#01EF
+			out (c),a
+			inc a
+			inc b
+			out (c),a
+//show fw main screen
 			ld de,#0000
 	    	ld hl,MB03pluslogo
 			call sprite2.OK
@@ -420,9 +516,16 @@ setup_tab   db 4
 			ld	(txy32.cursor),bc
 			call txy32.txy
 ;carymary         
-			 ld bc,#4800
-			 ld de,#48ff
-			 call draw_jugo.DRAW
+			ld bc,#4800
+			ld de,#48ff
+			call draw_jugo.DRAW
+
+//StartUp order #2
+			ld a,(suorder+1)
+			cp 2
+			jp z,fastbs
+			cp 3
+			jp z,fastsd
 
 			ld	bc,#3D7A
 			ld	(txy51.cursor),bc
@@ -456,7 +559,7 @@ setup_tab   db 4
 			ld	(txy51.cursor),bc
 			ld	hl,DATE
 			call txy51.txy
-			;Core Time Stamp
+//Core Time Stamp
 			ld	bc,#9E70
 			ld	(txy51.cursor),bc
 			ld	hl,COREFW1
@@ -518,18 +621,14 @@ setup_tab   db 4
 			ld	(txy51.cursor),bc
 			ld	hl,CONF3
 			call txy51.txy
-//			ld	bc,#9803
-//			ld	(txy51.cursor),bc
-//			ld	hl,CONF4
-//			call txy51.txy
-		
 	
 //carymary2				
-			 ld bc,#A600
-			 ld de,#A6ff
-			 call draw_jugo.DRAW
-			
-			call cf.IDENT
+			ld bc,#A600
+			ld de,#A6ff
+			call draw_jugo.DRAW
+
+//reading CF info			
+/*			call cf.IDENT
 			ld	bc,#707B
 			ld	(txy51.cursor),bc
 			jr nz,cferr
@@ -538,82 +637,9 @@ setup_tab   db 4
 			ld   b,40
 			call cf.PROHOD
 			set  7,(ix+79)			
-cferr		call txy51.txy
+cferr		call txy51.txy*/
 ; configuration tests
 
-; set wifi module to gently power consumption
-wfon		
-			ld bc,ZXi_port0
-			ld a,5
-			out (c),a
-			inc b
-			in a,(c)			
-			rrca
-			jr nc,2F	//not enable
-			rrca
-			jr nc,2F	//not low rfpower
-			ld b,1					; wftimeout	
-wfloop1		ld de,0							
-wftimeout	dec de
-			ld a,d
-			or e
-			jr nz, wftimeout
-			djnz wfloop1
-			ld b,#13				; wifi ZXi TX port
-			ld hl,wifistring
-
-1			ld a,(hl)
-			out (c),a
-			ex af,af'
-wfbusy		
-			in a,(c)
-			bit 1,a					
-			jr nz,wfbusy
-			ex af,af'						
-			inc hl
-			cp 10			//test end of string
-			jr nz,1B	
-			jr 2F
-wifistring  db "AT+RFPOWER=0",13,10
-
-2	
-
-			xor a
-			ld bc,ZXi_port0				//ZXi portselect
-			out (c),a
-			inc b
-			dec a					//HW - FF firmware
-			out (c),a
-			ei	
-			halt				//waiting for border to get relevant data
-			ld bc,65533			//real AY active?
-			ld a,2
-			out (c),a
-			ld b,#BF
-			out (c),a
-			ld b,#FF			
-			in a, (c)
-			cp 2
-			jr z,realayinstalled //if real ay present skip it
-			ld bc,ZXi_port0
-			ld a,#01
-			out (c),a
-			inc b
-			in a,(c)
-			bit 1,a
-			jr z,realayinstalled //if 3xAY disabled skip it
-			inc b
-			in a,(c)
-			set 1,a				//enable reading of MB03+ AYs
-			out (c),a
-realayinstalled
-; profi interface setup - dedicated to Hood
-			xor a
-			ld bc,#01EF
-			out (c),a
-			inc a
-			inc b
-			out (c),a
 
 // Setup keyboard second part
 /*			xor a
@@ -651,104 +677,31 @@ realayinstalled
 			out (c),a			
 3*/
 
+
+
 loopkey		
 1			
 			xor a
 			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
 			inc b
-			dec a					//HW - FF firmware
+			dec a						//HW - FF firmware
 			out (c),a
+
 			ei
-/*			xor a
-			ld bc,ZXi_port0
-			out (c),a
-			ld bc,ZXi_port7
-			in a,(c)
-			cp h
-			ld h,a
-			push hl	*/
 			halt
-//			xor a
-//			out (254),a
 			di
+
 			xor a
 			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
 			ld bc,ZXi_port1
-			ld a,1					//HW - 1 MB02+
+			ld a,1						//HW - 1 MB02+
 			out (c),a	
 			call clock		
-			call iinkey.IINKEY		; waiting for key
-;			pop hl		
+			call iinkey.IINKEY			//waiting for key
 			jr z,1B
 
-			cp "0"
-			jr nz,1F
-			ld a,9
-			ld bc,ZXi_port0				//test pattern
-			out (c),a
-			ld bc,ZXi_port1
-			ld a,#FF
-			out (c),a
-1			cp "9"
-			jr nz,1F
-			ld a,9
-			ld bc,ZXi_port0				//test text mode
-			out (c),a
-			ld bc,ZXi_port1
-			ld a,#FE
-			out (c),a
-1			cp "8"
-			jr nz,1F
-			ld a,9
-			ld bc,ZXi_port0				//text mode
-			out (c),a
-			ld bc,ZXi_port1
-			ld a,#80
-			out (c),a
-1			cp "7"
-			jr nz,1F
-			ld a,9
-			ld bc,ZXi_port0				//mode 1
-			out (c),a
-			ld bc,ZXi_port1
-			ld a,#01
-			out (c),a
-1			cp "6"
-			jr nz,1F
-			ld a,9
-			ld bc,ZXi_port0				//mode 2
-			out (c),a
-			ld bc,ZXi_port1
-			ld a,#02
-			out (c),a	
-1			cp "5"
-			jr nz,1F
-			ld a,9
-			ld bc,ZXi_port0				//mode 3
-			out (c),a
-			ld bc,ZXi_port1
-			ld a,#03
-			out (c),a									
-1			cp "P"
-			jr nz,1F
-			ld a,#A
-			ld bc,ZXi_port0				//Sync on
-			out (c),a
-			ld bc,ZXi_port1
-			in a,(c)
-			or 2
-			out (c),a
-1			cp "O"
-			jr nz,1F
-			ld a,#A
-			ld bc,ZXi_port0				//Sync off
-			out (c),a
-			ld bc,ZXi_port1
-			in a,(c)
-			and %11111101
-			out (c),a
 1			cp "L"
 			jr nz,1F
 			ld a,#A
@@ -758,6 +711,8 @@ loopkey
 			in a,(c)
 			or 1
 			out (c),a
+			jr loopkey
+
 1			cp "K"
 			jr nz,1F
 			ld a,#A
@@ -766,14 +721,16 @@ loopkey
 			ld bc,ZXi_port1
 			in a,(c)
 			and %11111110
-			out (c),a	
-1			cp "S"					//SetUp/Bios
+			out (c),a
+			jr loopkey
+
+1			cp "S"						//SetUp
 			jr nz,1F
 			xor a
-			ld bc,ZXi_port0					//ZXi portselect
+			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
 			ld bc,ZXi_port1
-			ld a,255					//HW - FF - Firmware
+			dec a						//HW - FF - Firmware
 			out (c),a
 
 			xor a
@@ -791,6 +748,7 @@ loopkey
 			ld a,#60					//flash enable, read only
 			out (#53),a
 			rst 0
+
 1			cp "A"						//UserApps-0
 			jr nz,1F
 			xor a
@@ -988,7 +946,7 @@ next1		cp 11h					; break
 			cp '1'					//key 1
 			jp nz,3F
 			call clean
-			ld bc,#B800
+fastbs			ld bc,#B800
 			ld	(txy32.cursor),bc
 			LD HL, STRIPS
 			call txy32.txy
@@ -1232,8 +1190,22 @@ holdkey4	call iinkey.IINKEY
 
 1			cp 6					// key shitf+2(capslock) - ESXDOS DivMMC warm start
 			jr nz, 9F
+			
 			xor a
-//			out (23),a 
+			ld bc,ZXi_port0				//ZXi portselect
+			out (c),a
+			inc b
+			ld a,#FF					//HW - FF - Firmware
+			out (c),a
+			xor a	
+			out (#53),a
+			out (#27),a
+			out (#67),a
+			out (#07),a
+			inc a
+			out (#47),a
+
+			xor a
 			ld bc,ZXi_port0				//ZXi portselect
 			out (c),a
 			ld bc,ZXi_port1
@@ -1252,7 +1224,7 @@ holdkey4	call iinkey.IINKEY
 			jp nz, 10F
 
 			call clean
-			ld bc,#B800
+fastsd			ld bc,#B800
 			ld	(txy32.cursor),bc
 			LD HL, STRIPS
 			call txy32.txy
@@ -1880,6 +1852,7 @@ clean		ld a,7			//clear place
 	INCLUDE "sprite2.a80"
 	INCLUDE "xdec_06.a80"
 	INCLUDE "cf.a80"
+	INCLUDE "effect.a80"			; Busy nonbootdisk effect
 MB03pluslogo
 	INCBIN "MB03+LOGOv2.bin"
 ultimatelogo	
@@ -1926,7 +1899,7 @@ zvukend
 TEXT0 	 	dc 16,69,"LMN128-Jan Kucera-Zlin/CZ"
 TEXT4 		db 16,71,"1:",16,6,"MB02+(BSDOS308+EH) ",16,71,"e:",16,6,"bs128Kreset ",16,71,"   ABCD:",16,7,"UserApps"
 			dc " "
-TEXT2	 	db 16,71,"2:",16,6,"DivMMC  ",16,71,"@:",16,6,"DivIDE  "
+TEXT2	 	db 16,71,"2:",16,6,"DivSD   ",16,71,"@:",16,6,"DivIDE  "
 			dc " "
 TEXT3    	db 16,71,"3:",16,6,"Ultimate BSDOS & esxDOS ",16,71,"d:",16,7,"Dev+ ",16,71,"t:",16,7,"Diag ",16,71,"break:",16,7,"ZXROM  "
 			dc " "
@@ -1943,13 +1916,13 @@ STRIPS		db 16,66,32,32
 HW1			db 16,67,"HARDWARE: "
 			dc 16,7,"3.1"
 HW2			db 16,3,"FPGA: "
-			dc 16,7,"Xilinx SPARTAN 7 XC7S50/112 MHz"
+			dc 16,7,"Xilinx SPARTAN 7 XC7S50"
 HW3			db 16,3,"RTC: "
 			dc 16,7,"Maxim DS3234"
 HW4			db 16,3,"SRAM: ",16,7,"16MB ",16,3,"FastSRAM: ",16,7,"4MB ",16,3,"FLASH: ",16,7,"2MB  ",16,3,"FRAM: "
 			dc 16,7,"8KB"
 HW5			db 16,3,"STORAGE: "
-			dc 16,7,"2x microSD, CF:"
+			dc 16,7,"2x microSD, CompactFlash"
 HW6			db 16,3,"OTHERS: "
 			dc 16,7,"USB, Wifi ESP8266, Matrix 8x8 LEDs"
 

@@ -4,6 +4,8 @@
 
 ;start	xor	a
 ;	out	(#fe),a
+	module effect
+begin
 	ld	a,#03
 	ld	hl,#4000
 	ld	de,#4001
@@ -43,6 +45,7 @@ nn2	ld	b,h
 wait	djnz	wait
 	jp	nn2
 end
+	endmodule
 ;		ret   ; for testing
 ;	OUTEND
 ;	SAVESNA	"effect.sna",start
