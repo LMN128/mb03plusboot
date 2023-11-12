@@ -1,6 +1,6 @@
 *.3*
 *.sna
-*.tap*
+*.tap
 *.lst
 *.cde
 *.exe
