@@ -378,7 +378,7 @@ skipanim
 			pop bc
 			djnz 4B
 			jr 8F
-setup_tab   db 4
+setup_tab   db 4				//set LED matrix
 			dw #2004			
 /*setup_tab   db 1
 			dw #2001
@@ -427,6 +427,37 @@ setup_tab   db 4
 			out (#53),a
 //End Setup section
 
+//test if DMA on the ZXS is available (eLeMeNt ZX)
+			ld a,#12
+			ld bc,ZXi_port0
+			out (c),a
+			inc b
+			in a,(c)
+			bit 1,a
+			jr z,1F 	// bit 1=0 skip test if DMA in available in the zx spectrum
+			bit 0,a
+			jr z,1F		// bit 0=0 DMA is not enable; skip test
+			and #FE		//zachovej si bity 7-1
+			out (c),a 	//DMA temporary disable
+			ld a,#C3	//reset DMA
+			out (DMA),a
+			in a, (DMA) //read from DMA
+			and #FE		//zajimaji mne jen bity 7-1
+			cp #FC		//DMA is available?
+			jr z,2F		//DMA is available in ZX Spectrum, keep MB03+ DMA dissabled
+			in a,(c)
+			set 0,a
+			out (c),a
+			jr 1F
+//vypis ze je DMAcko v MB03+ dissablovane, protoze se naslo druhe v ZX Spectrum
+2
+			ld a,#C3			//reset DMA
+			out (DMA),a
+			ld	bc,#3FFB
+			ld	(txy51.cursor),bc
+			ld	hl,TX1
+			call txy51.txy			
+1
 // set wifi module to gently power consumption
 wfon		
 			ld bc,ZXi_port0
@@ -527,7 +558,7 @@ realayinstalled
 			cp 3
 			jp z,fastsd
 
-			ld	bc,#3D7A
+			ld	bc,#3F00
 			ld	(txy51.cursor),bc
 			ld	hl,TEXT0
 			call txy51.txy
@@ -547,15 +578,15 @@ realayinstalled
 			ld	(txy51.cursor),bc
 			ld	hl,TEXT5
 			call txy51.txy
-			ld	bc,#9EB3
+			ld	bc,#9EBE
 			ld	(txy51.cursor),bc
 			ld	hl,FW1
 			call txy51.txy
-			ld	bc,#9EBF
+			/*ld	bc,#9EBF
 			ld	(txy51.cursor),bc
 			ld	hl,FW2
-			call txy51.txy
-			ld	bc,#9ED8
+			call txy51.txy*/
+			ld	bc,#9ED7
 			ld	(txy51.cursor),bc
 			ld	hl,DATE
 			call txy51.txy
@@ -564,11 +595,11 @@ realayinstalled
 			ld	(txy51.cursor),bc
 			ld	hl,COREFW1
 			call txy51.txy
-			ld	bc,#9E87
+			ld	bc,#9E89
 			ld	(txy51.cursor),bc
 			ld	hl,COREFW2
 			call txy51.txy
-			ld	bc,#9E91
+			ld	bc,#9E93
 			ld	(txy51.cursor),bc
 			ld bc,ZXi_port0
 			ld a,#FF
@@ -604,22 +635,26 @@ realayinstalled
 			ld	(txy51.cursor),bc
 			ld	hl,HW5
 			call txy51.txy
-			ld	bc,#7803
+			/*ld	bc,#7803
 			ld	(txy51.cursor),bc
 			ld	hl,HW6
-			call txy51.txy
+			call txy51.txy*/
 
-			ld	bc,#8000
+			ld	bc,#7800
 			ld	(txy51.cursor),bc
 			ld	hl,CONF1
 			call txy51.txy
-			ld	bc,#8803
+			ld	bc,#8003
 			ld	(txy51.cursor),bc
 			ld	hl,CONF2
 			call txy51.txy
-			ld	bc,#9003
+			ld	bc,#8803
 			ld	(txy51.cursor),bc
 			ld	hl,CONF3
+			call txy51.txy
+			ld	bc,#9003
+			ld	(txy51.cursor),bc
+			ld	hl,CONF4
 			call txy51.txy
 	
 //carymary2				
@@ -772,6 +807,8 @@ loopkey
 			out (#47),a
 			ld a,#60					//flash enable, read only
 			out (#53),a
+			di
+			ld sp,0
 			rst 0
 1			cp "B"						//UserApps-1
 			jr nz,1F
@@ -796,6 +833,8 @@ loopkey
 			out (#47),a
 			ld a,#60					//flash enable, read only
 			out (#53),a
+			di
+			ld sp,0
 			rst 0
 1			cp "C"						//UserApps-2
 			jr nz,1F
@@ -820,6 +859,8 @@ loopkey
 			out (#47),a
 			ld a,#60					//flash enable, read only
 			out (#53),a
+			di
+			ld sp,0
 			rst 0
 1			cp "D"						//UserApps-3
 			jr nz,1F
@@ -844,6 +885,8 @@ loopkey
 			out (#47),a
 			ld a,#60					//flash enable, read only
 			out (#53),a
+			di
+			ld sp,0
 			rst 0						
 1			cp "W"						//Wifi
 			jr nz,1F
@@ -1511,15 +1554,15 @@ userlevel	call txy51.txy
 			inc hl
 			djnz 1B
 			;Core Time Stamp FULL
-			ld	bc,#4000
+			ld	bc,#5000
 			ld	(txy51.cursor),bc
 			ld	hl,COREFW1
 			call txy51.txy
-			ld	bc,#4017
+			ld	bc,#5017
 			ld	(txy51.cursor),bc
 			ld	hl,COREFW2
 			call txy51.txy
-			ld	bc,#4021
+			ld	bc,#5021
 			ld	(txy51.cursor),bc
 			ld bc,ZXi_port0
 			ld a,#FF
@@ -1896,16 +1939,18 @@ zvukend
          defw EasyLogoSmall
 */		 
 ; --------------- T E X T---------------------------------------
-TEXT0 	 	dc 16,69,"LMN128-Jan Kucera-Zlin/CZ"
-TEXT4 		db 16,71,"1:",16,6,"MB02+(BSDOS308+EH) ",16,71,"e:",16,6,"bs128Kreset ",16,71,"   ABCD:",16,7,"UserApps"
+TEXT0 	 	dc 16,7,"LMN128-Jan Kucera-Zlin/CZ"
+TEXT4 		db 16,71,"1:",16,6,"BSDOS308+EasyHDD  ",16,71,"e:",16,6,"bs128Kreset ",16,71,"    ABCD:",16,7,"UserApps"
 			dc " "
 TEXT2	 	db 16,71,"2:",16,6,"DivSD   ",16,71,"@:",16,6,"DivIDE  "
 			dc " "
-TEXT3    	db 16,71,"3:",16,6,"Ultimate BSDOS & esxDOS ",16,71,"d:",16,7,"Dev+ ",16,71,"t:",16,7,"Diag ",16,71,"break:",16,7,"ZXROM  "
+//TEXT3    	db 16,71,"3:",16,6,"Ultimate BSDOS & esxDOS ",16,71,"d:",16,7,"Dev+ ",16,71,"t:",16,7,"Diag ",16,71,"break:",16,7,"ZXROM  "
+TEXT3    	db 16,71,"CapsLock: ",16,6,"esxDOS-NMI      ",16,71,"d:",16,7,"Dev+ ",16,71,"t:",16,7,"Diag ",16,71,"break:",16,7,"ZXROM  "
+
 			dc " "
 TEXT1    	dc 16,69,"MB03+ Ultimate firmware 1.28"
-TEXT5       db 16,71,"W:",16,7,"Wifi ",16,71,"T:",16,7,"SysInfo ",16,71,"S:",16,7,"Setup "
-			dc " "	
+TEXT5       db 16,71,"W:",16,7,"Wifi ",16,71,"T:",16,7,"SysInfo ",16,71,"S:",16,7,"Setu"
+			dc "p"	
 STRIPS		db 16,66,32,32
 			db 16,70,32,32
 			db 16,68,32,32,32,32,32
@@ -1913,29 +1958,27 @@ STRIPS		db 16,66,32,32
 			db 16,7,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32+128
 ;TEXTTEST 	dc 16,6,"0123456789 128 WADHTUTTUU ZX Spectrum 128+2"
 ;TEXTTEST2 dc 16,6,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwyxz"
-HW1			db 16,67,"HARDWARE: "
-			dc 16,7,"3.1"
-HW2			db 16,3,"FPGA: "
-			dc 16,7,"Xilinx SPARTAN 7 XC7S50"
-HW3			db 16,3,"RTC: "
-			dc 16,7,"Maxim DS3234"
-HW4			db 16,3,"SRAM: ",16,7,"16MB ",16,3,"FastSRAM: ",16,7,"4MB ",16,3,"FLASH: ",16,7,"2MB  ",16,3,"FRAM: "
-			dc 16,7,"8KB"
-HW5			db 16,3,"STORAGE: "
-			dc 16,7,"2x microSD, CompactFlash"
-HW6			db 16,3,"OTHERS: "
-			dc 16,7,"USB, Wifi ESP8266, Matrix 8x8 LEDs"
+HW1			dc 16,67,"HARDWARE: "
+			//dc 16,7,"3.1"
+HW2			db 16,7,"SRAM 16MB ",16,3,"| ",16,7,"FastSRAM 2MB ",16,3,"| ",16,7,"FLASH 1MB ",16,3,"| ",16,7,"FRAM 8KB"	
+			dc 16,7," "		
+HW3			db 16,7,"divSD ",16,3,"| ",16,7,"divIDE ",16,3,"| ",16,7,"MB-CF ",16,3,"| ",16,7," uSD ",16,3,"| ",16,7,"CompactFlash ",16,3,"| ",16,7,"NMI"	
+			dc 16,7," "	
+HW4			db 16,7,"Wi-Fi ",16,3,"| ",16,7,"UART ",16,3,"| ",16,7,"RTC ",16,3,"| ",16,7,"USB/PS2 ",16,3,"| ",16,7,"K-mouse ",16,3,"| ",16,7,"PC keyb."
+			dc 16,7," "	
+HW5			db 16,7,"LED matrix ",16,3,"| ",16,7,"joystick ",16,3,"| ",16,7,"stereo audio ",16,3,"| ",16,7,"dig. video"
+			dc 16,7," "	
 
-CONF1		db 16,67,"CONFIGURATION: "
-			dc 16,7,"3.3"
-CONF2		db 16,7,"3xAY "
-			db 16,3,"| ",16,7,"SounDrive ",16,3,"| ",16,7,"SAA1099 ",16,3,"| ",16,7,"Gen.Sound ",16,3,"| ",16,7,"DMA ",16,3,"| "
-			dc 16,7,"IDE:"
+CONF1		dc 16,67,"FEATURES: "
+CONF2		db 16,7,"3xAY ",16,3,"| ",16,7,"TurboSound/FM ",16,3,"| ",16,7,"SAA1099 ",16,3,"| ",16,7,"SounDrive ",16,3,"| ",16,7,"SID"
+			dc 16,7," "
 CONF3		
-			db 16,7,"SD ",16,3,"| ",16,7,"RTC ",16,3,"| ",16,7,"Wifi ",16,3,"| ",16,7,"DigitalVideoAudio  ",16,3,"| ",16,7,"TSFM  ",16,3,"| ",16,7,"SID"
+			db 16,7,"GeneralSound ",16,3,"| ",16,7,"DMA ",16,3,"| ",16,7,"FDMA ",16,3,"| ",16,7,"Z-Control ",16,3,"| ",16,7,"KeyLayer"
 			dc 16,7," "
 CONF4		
+			db 16,7,"HGFX ",16,3,"| ",16,7,"HRC/HRXC ",16,3,"| ",16,7,"ULA+ ",16,3,"| ",16,7,"TrueCol ",16,3,"| ",16,7,"HW GigaScreen"
 			dc 16,7," "			
+		
 ADVS0		db 16,6,"User level: " 
 			dc 16,7," "			
 ADVS1		db 16,6,"OnTime: " 
@@ -1956,8 +1999,7 @@ LEVEL4		dc 16,5,"Enhanced"
 LEVEL5		dc 16,5,"Geek"
 LEVEL6		dc 16,5,"Guru"
 LEVEL7		dc 16,4,"Ultimate"						
-FW1			dc 16,7,"FW:"
-FW2			dc "1.28/"
+FW1			dc 16,7,"Boot:"
 COREFW1		dc "Core:"
 COREFW2		dc "20"
 ESX1		dc 16,5,"esxDOS is loading"
@@ -1971,6 +2013,8 @@ ULT5		db 16,7,"ESXDOS ",16,5,"ver. 0.9.x for MB03+ Ultimate with",32+128
 ULT6		db 16,5,"lots of new features, incl. Long filename (LFN).",32+128
 ULT7		dc 16,4,"Thanks to MB03+ capabilities both systems will be "
 ULT8		dc 16,4,"more flexible and faster."
+
+TX1 		dc 16,7,"*"
 
 //test#3FFD   db 32
 

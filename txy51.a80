@@ -79,7 +79,7 @@ xy8	ld	de,znaky
 	add	hl,hl
 	add	hl,hl
 	add	hl,de
-	push	hl
+	push hl
 	pop	iy
 	ld	xh,#08
 xy8dd	ld	a,b
@@ -107,6 +107,7 @@ xy8dd	ld	a,b
 	rlca
 	rlca
 	ld l,a
+	ld (hlbuff),hl		
 	ld a,c
 	and 07
 
@@ -128,6 +129,7 @@ xy8bb	ld	a,d
 	inc	iy
 	dec	xh
 	jr	nz,xy8dd
+	ld hl,(hlbuff)
 	call T51_COLOR
 xyend	ld	ix,flag0
 	ld	a,(ix+#04)
@@ -148,7 +150,7 @@ T51_COLOR
 				ret z
 ; pokud je nula, tak se neobarvuje
 ;				dec h
-				dec l
+;				dec l
 
 				ld a,h
 				rrca
@@ -172,6 +174,7 @@ xxx	db	#00
 yyy	db	#00
 leni	dw	0
 adr	dw	0
+hlbuff dw 0
 
 znaky
  INCBIN zx51.ch6
