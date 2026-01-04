@@ -27,7 +27,7 @@ OK
 					inc hl
           ld c,(hl)
           inc hl
-         ld   a,d
+OKBC     ld   a,d
          rrca
          rrca
          rrca

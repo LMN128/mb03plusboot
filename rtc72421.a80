@@ -1,0 +1,75 @@
+
+time72421    //fill IX with current time from RTC72421
+
+            ld bc,#0003		//read seconds register
+            in a,(c)
+            and #0F
+            or #B0              //end of string
+            ld (ix+21),a		//1sec     
+            inc b
+            in a,(c)
+            and #07
+            or 48
+            ld (ix+20),a		//10sec
+            inc b
+            in a,(c)
+            and #0F
+            or 48
+            ld (ix+18),a		//1min
+            inc b
+            in a,(c)
+            and #07
+            or 48
+            ld (ix+17),a		//10min
+            inc b
+            in a,(c)    
+            and #0F
+            or 48
+            ld (ix+15),a		//1hour
+            inc b       
+            in a,(c)
+            and #03
+            or 48       
+            ld (ix+14),a		//10hour
+            inc b
+            in a,(c)
+			and #0F
+			or 48
+			ld (ix+1),a		    //1day
+            inc b
+            in a,(c)
+            and #03
+            or 48   
+            ld (ix+0),a		    //10day
+            inc b   
+            in a,(c)
+            and #0F
+            or 48       
+            ld (ix+4),a		    //1month
+            inc b
+            in a,(c)    
+            and #01
+            or 48
+            ld (ix+3),a		    //10month
+            inc b
+            in a,(c)
+            and #0F
+            or #B0              //end of string
+            ld (ix+9),a		    //1year
+            inc b
+            in a,(c)    
+            and #0F
+            or 48       
+            ld (ix+8),a		    //10year
+            inc b
+            in a,(c)            //weekday
+            and #07
+            sla	a
+			sla	a
+			ld hl, weekdays
+			ld d,0
+			ld e,a
+			add hl,de
+			ld de, clockbuff2
+			ld bc,4
+			ldir

@@ -1,0 +1,120 @@
+; RTC DS3234 module routines
+time3234    //fill IX with current time from RTC72421   
+			xor a
+			ld bc,ZXi_port0
+			out (c),a
+			ld bc,ZXi_port7
+			in a,(c)
+			push af
+			and #0F
+			or #B0
+			ld (ix+21),a		//1sec
+			pop af
+			rr a
+			rr a
+			rr a
+			rr a
+			and #07
+			or 48
+			ld (ix+20),a		//10sec
+			ld a,1
+			ld bc,ZXi_port0
+			out (c),a
+			ld bc,ZXi_port7
+			in a,(c)
+			push af			
+			and #0F
+			or 48
+			ld (ix+18),a		//1min
+			pop af
+			rr a
+			rr a
+			rr a
+			rr a
+			and #07
+			or 48
+			ld (ix+17),a		//10min
+			ld a,2
+			ld bc,ZXi_port0
+			out (c),a
+			ld bc,ZXi_port7
+			in a,(c)
+			push af
+			and #0F
+			or 48
+			ld (ix+15),a		//1hour
+			pop af
+			rr a
+			rr a
+			rr a
+			rr a
+			and #07
+			or 48
+			ld (ix+14),a		//10hour
+			ld a,3
+			ld bc,ZXi_port0
+			out (c),a
+			ld bc,ZXi_port7
+			in a,(c)
+			dec a
+			and #7
+			sla	a
+			sla	a
+			ld hl, weekdays
+			ld d,0
+			ld e,a
+			add hl,de
+			ld de, clockbuff2
+			ld bc,4
+			ldir
+			ld a,4
+			ld bc,ZXi_port0
+			out (c),a
+			ld bc,ZXi_port7
+			in a,(c)
+			push af
+			and #0F
+			or 48
+			ld (ix+1),a		//1day
+			pop af
+			rr a
+			rr a
+			rr a
+			rr a
+			and #03
+			or 48
+			ld (ix+0),a		//10day	
+			ld a,5
+			ld bc,ZXi_port0
+			out (c),a
+			ld bc,ZXi_port7
+			in a,(c)
+			push af
+			and #0F
+			or 48
+			ld (ix+4),a		//1month
+			pop af
+			rr a
+			rr a
+			rr a
+			rr a
+			and #01
+			or 48
+			ld (ix+3),a		//10month
+			ld a,6
+			ld bc,ZXi_port0
+			out (c),a
+			ld bc,ZXi_port7
+			in a,(c)
+			push af
+			and #0F
+			or #B0
+			ld (ix+9),a		//1year
+			pop af
+			rr a
+			rr a
+			rr a
+			rr a
+			and #0F
+			or 48
+			ld (ix+8),a		//10year 

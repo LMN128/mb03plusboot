@@ -1,6 +1,6 @@
 	MODULE 	boot
 	DEVICE 	ZXSPECTRUM48
-	OUTPUT	boot.cde
+//	OUTPUT	boot.cde
 	
 ;███████████████ V A R I A B L E S ██████████████████████████████████████		
 DMA 		equ #0B
@@ -20,7 +20,8 @@ g_ZXi_port1	equ #7D3B
 u_ZXi_port0 equ #FC3B
 u_ZXi_port1 equ #FD3B
 ;███████████████ M A I N  C O D E ███████████████████████████████████████	
-			org 49152		
+
+			org #C000//49152-gap		
 maincode
 			DISP 0
 boot		di
@@ -31,16 +32,10 @@ boot		di
 			xor	a
 			ld	i, a
 			out (ULA),a
-/*			ld	hl, 5AFFh
-			ld	de, 5AFEh
-			ld	bc, 1AFFh
-			ld	(hl), a
-			lddr					; Clear	videoram (black	screen)	
-			in	a, (254)
-			cpl
-			and	1Fh
-			jr  nz,endramtest		;skip Busy effect
-			*/
+			ld bc,g_ZXi_port0
+			out (c),a
+			inc b
+			out (c),a  //select 0 - external device - MB03+
 			jr boot2
 			db "LMN128"
 //WARNING max #38 bytes!!!!			
@@ -49,20 +44,33 @@ endboot		BLOCK #38-endboot,0
 im1			ei
 			ret					
 boot2
-//	INCLUDE "effect.a80"			; Busy nonbootdisk effect
 
 endramtest	ld hl,ramcodeinrom
 			ld de,ramcode
 			ld bc,endramcode-ramcode
 			ldir
 			jp ramcode
+ramcodeinrom 	
 
-ramcodeinrom	
-
+gap			equ ramcodeinrom-boot
 			ent						; restore address to compile to right place
 ramcode		
 			di						; for sna test
 			ld sp,0					; for sna test
+			im 1
+
+			ld bc,ZXi_port0
+			ld a,#FF			//Board version
+			out (c),a
+			ld bc,ZXi_port7	
+			in a,(c)
+			cp #35				//is Slim board?
+			ld a,1
+			jr z,1F
+			dec a				//not Slim
+1			ld (SLIM),a			//save board version	
+
+			
 //test Enter key to start full firmware
 			ld a,%10111111			//A14 - row with enter key 
 			in a,(#FE)
@@ -92,30 +100,7 @@ suorder		ld a,0
 			or a
 			jp nz,skipanim
 
-			// Setup keyboard first part
-/*			ld bc,ZXi_port0			;MB03+
-			ld a,#11				;Mouse/Keyboard
-			out (c),a
-			inc b
-			ld a,#03				;set keyboard
-			out (c),a
-
-			ld bc,u_ZXi_port0		;Uno
-			ld a,4					;SCANCODE reg_number
-			out (c),a
-			inc b
-			ld a,#FF				;reset keyboard
-			out (c),a	*/							
-/*
-; temporary switch to MB02+ machine for testing and NMI enable
-						
-			xor a
-			ld bc,ZXi_port0				//ZXi portselect
-			out (c),a
-			ld bc,ZXi_port1
-			ld a,1					//HW - 1 - MB02+
-			out (c),a
-*/			
+//Start animation sequence
 
 				call iinkey.IINKEY		; waiting for key
 				jp nz,skipanim
@@ -319,7 +304,12 @@ singledot	ld	(txy32.cursor),bc
 			call txy32.xy
 			ret
 
-follow1		ld de,#050F
+
+follow1		
+			ld a,(SLIM)
+			and a 
+			jr nz,skipanim
+			ld de,#050F
 	        ld hl,ultimatelogo
 			ld a,13				// number of sprites in animations
 1			push af
@@ -456,8 +446,20 @@ setup_tab   db 4				//set LED matrix
 			ld	bc,#3FFB
 			ld	(txy51.cursor),bc
 			ld	hl,TX1
-			call txy51.txy			
-1
+			call txy51.txy	
+
+1			//jeste jeden test DMA
+			ld a,#C3	//reset DMA
+			out (DMA),a
+			in a, (DMA) //read from DMA
+			and #FE		//zajimaji mne jen bity 7-1
+			cp #FC		//DMA is available?
+			jr z,2F		//DMA is available
+			ld	bc,#3FF6 //no DMA active !
+			ld	(txy51.cursor),bc
+			ld	hl,TX2
+			call txy51.txy
+2			 
 // set wifi module to gently power consumption
 wfon		
 			ld bc,ZXi_port0
@@ -534,8 +536,59 @@ realayinstalled
 			out (c),a
 //show fw main screen
 			ld de,#0000
+			ld a,(SLIM)
+			and a
+			jr nz,1F
 	    	ld hl,MB03pluslogo
 			call sprite2.OK
+			jp 2F
+1			ld hl,MB03pluslogo+2
+			ld bc,#0520
+			call sprite2.OKBC		//jen par radku loga
+			//red dot
+			ld a,0
+			ld (txy32.orflag),a
+			ld a,66
+			ld (txy32.T32_ATT),a
+			ld	bc,#2A00
+			call singledot
+			//yellow dot
+			ld a,70
+			ld (txy32.T32_ATT),a
+			ld	bc,#2A10
+			call singledot
+			//green dot
+			ld a,68
+			ld (txy32.T32_ATT),a
+			ld	bc,#2A2E
+			call singledot
+			//blue dot
+			ld a,69
+			ld (txy32.T32_ATT),a
+			ld	bc,#2A59
+			call singledot
+			//wider
+			ld a,0
+			ld (txy32.orflag),a
+			ld a,69
+			ld (txy32.T32_ATT),a
+			ld	bc,#2A57
+			ld  de,#2A60
+			ld a,#4B
+			call wide1
+			ld a,68
+			ld (txy32.T32_ATT),a
+			ld	bc,#2A2A
+			ld  de,#2A35
+			ld a,#1F
+			call wide1
+			//text Slim
+			ld	bc,#30E9
+			ld	(txy51.cursor),bc
+			ld	hl,SLIMTXT
+//			call txy51.txy
+
+2
 
 			ld hl, STRIPS
 			ld bc,#4800
@@ -710,10 +763,20 @@ cferr		call txy51.txy*/
 			halt
 			ld a,#02 				;Keyboard - set LED - Num lock on
 			out (c),a			
-3*/
-
-
-
+3*/				
+			ld a,(SLIM)
+			and a
+			jp z,1F
+			call i_time
+1			
+/*			ld	bc,#49D8
+			ld	(txy51.cursor),bc	
+			ld	hl,white			
+			ld a,(syn_OK)
+			or a
+			jr nz,1F
+			ld	hl,blue
+1			call txy51.txy*/
 loopkey		
 1			
 			xor a
@@ -1160,7 +1223,7 @@ holdkey4	call iinkey.IINKEY
 			jp #3906				//jp to bsrom140
 			
 7			cp 'd'
-			jr nz, 8F				
+			jp nz, 8F				
 ; clear below 3/3			
 			ld   a,7
 			ld   HL,22528+512
@@ -1685,128 +1748,15 @@ NUM_PRIC sbc  hl,de
 
 clock
 			ld ix,clockbuff
-			xor a
-			ld bc,ZXi_port0
-			out (c),a
-			ld bc,ZXi_port7
-			in a,(c)
-			push af
-			and #0F
-			or #B0
-			ld (ix+21),a		//1sec
-			pop af
-			rr a
-			rr a
-			rr a
-			rr a
-			and #07
-			or 48
-			ld (ix+20),a		//10sec
-			ld a,1
-			ld bc,ZXi_port0
-			out (c),a
-			ld bc,ZXi_port7
-			in a,(c)
-			push af			
-			and #0F
-			or 48
-			ld (ix+18),a		//1min
-			pop af
-			rr a
-			rr a
-			rr a
-			rr a
-			and #07
-			or 48
-			ld (ix+17),a		//10min
-			ld a,2
-			ld bc,ZXi_port0
-			out (c),a
-			ld bc,ZXi_port7
-			in a,(c)
-			push af
-			and #0F
-			or 48
-			ld (ix+15),a		//1hour
-			pop af
-			rr a
-			rr a
-			rr a
-			rr a
-			and #07
-			or 48
-			ld (ix+14),a		//10hour
-			ld a,3
-			ld bc,ZXi_port0
-			out (c),a
-			ld bc,ZXi_port7
-			in a,(c)
-			dec a
-			and #7
-			sla	a
-			sla	a
-			ld hl, weekdays
-			ld d,0
-			ld e,a
-			add hl,de
-			ld de, clockbuff2
-			ld bc,4
-			ldir
-			ld a,4
-			ld bc,ZXi_port0
-			out (c),a
-			ld bc,ZXi_port7
-			in a,(c)
-			push af
-			and #0F
-			or 48
-			ld (ix+1),a		//1day
-			pop af
-			rr a
-			rr a
-			rr a
-			rr a
-			and #03
-			or 48
-			ld (ix+0),a		//10day	
-			ld a,5
-			ld bc,ZXi_port0
-			out (c),a
-			ld bc,ZXi_port7
-			in a,(c)
-			push af
-			and #0F
-			or 48
-			ld (ix+4),a		//1month
-			pop af
-			rr a
-			rr a
-			rr a
-			rr a
-			and #01
-			or 48
-			ld (ix+3),a		//10month
-			ld a,6
-			ld bc,ZXi_port0
-			out (c),a
-			ld bc,ZXi_port7
-			in a,(c)
-			push af
-			and #0F
-			or #B0
-			ld (ix+9),a		//1year
-			pop af
-			rr a
-			rr a
-			rr a
-			rr a
-			and #0F
-			or 48
-			ld (ix+8),a		//10year
+/*			ld a,(SLIM)
+			and a
+			jp nz,1F
+	INCLUDE "rtcds3234.a80"		; RTC module DS3234
+			jp 3F
+1	*/		
+	INCLUDE "rtc72421.a80"		; RTC module 72421
 
-//			ld a,1
-//			out (254),a
-
+3
 			ld a,6			//clear place
 			ld hl, 16384+2048+32+512+27
 			ld de, 16384+2048+32+512+27+1
@@ -1846,7 +1796,7 @@ clock
 			ret
 clockbuff	dc "22/05/2073" 
 clockbuff2	dc "Tue "
-clockbuff3	dc "16:33:26"
+clockbuff3	dc "12:01:28"
 weekdays	dc "Sun "
 			dc "Mon "
 			dc "Tue "
@@ -1896,6 +1846,8 @@ clean		ld a,7			//clear place
 	INCLUDE "xdec_06.a80"
 	INCLUDE "cf.a80"
 	INCLUDE "effect.a80"			; Busy nonbootdisk effect
+	INCLUDE "i-time.a80"
+
 MB03pluslogo
 	INCBIN "MB03+LOGOv2.bin"
 ultimatelogo	
@@ -1949,7 +1901,7 @@ TEXT3    	db 16,71,"CapsLock: ",16,6,"esxDOS-NMI      ",16,71,"d:",16,7,"Dev+ ",
 
 			dc " "
 TEXT1    	dc 16,69,"MB03+ Ultimate firmware 1.28"
-TEXT5       db 16,71,"W:",16,7,"Wifi ",16,71,"T:",16,7,"SysInfo ",16,71,"S:",16,7,"Setu"
+TEXT5       db 16,71,"W:",16,7,"Wifi ",16,71,"T:",16,7,"SysInfo ",16,71,"S:",16,7,"SetU"
 			dc "p"	
 STRIPS		db 16,66,32,32
 			db 16,70,32,32
@@ -2015,6 +1967,14 @@ ULT7		dc 16,4,"Thanks to MB03+ capabilities both systems will be "
 ULT8		dc 16,4,"more flexible and faster."
 
 TX1 		dc 16,7,"*"
+TX2 		dc 16,7,"!"
+
+white		dc 16,7," "
+blue		dc 16,1," "
+
+SLIMTXT		dc 16,64+7,"Slim"
+
+SLIM		db 1 // detection of Slim
 
 //test#3FFD   db 32
 

@@ -1,0 +1,369 @@
+//lze vyuzit test pripojeni k AP pres AT+CIPSTATUS
+//            DEFINE  print 
+i_time    
+            xor a
+            ld (syn_OK),a
+            IFDEF print             
+            ld hl,16384
+            ld de,16385
+            ld bc,2047
+            ld (hl),0
+            ldir
+            ENDIF
+            call clear_fifo
+            call clear_uart_buffer
+            ld hl,ate1          //enable echo
+            call at_send
+            ld hl,uart_buffer
+            call at_read
+            IFDEF print  
+            ld	bc,#0000
+			ld	(txy51.cursor),bc			
+			ld hl,uart_buffer+100
+            ld (hl),128+127
+            ld hl,uart_buffer
+			call txy51.txy
+            ENDIF
+            call clear_fifo
+            call clear_uart_buffer
+            ld hl,at            //AT
+            call at_send
+            ld hl,uart_buffer
+            call at_read
+            IFDEF print  
+            ld	bc,#1000
+			ld	(txy51.cursor),bc			
+			ld hl,uart_buffer+100
+            ld (hl),128+127
+            ld hl,uart_buffer
+			call txy51.txy
+            ENDIF
+            // test if WiFi respone
+            ld hl,uart_buffer
+            ld a,(HL)
+            cp "A"
+            ret nz
+            inc hl
+            ld a,(HL)
+            cp "T"
+            ret nz
+
+
+            ld	bc,ZXi_port0		//find GMT zone
+            ld  hl,at_cipsntpcfg+16  //0 or - GMT chars in AT command
+		    ld	a,#40
+		    out	(c),a
+		    inc	b
+		    in	a,(c)			    //A=byte of GMT shift
+            or	a
+            jp	p,gmt_plus
+            neg                     //zone is minus
+            ld	(hl),"-"
+            jr 1F
+gmt_plus	ld	(hl),"0"
+1           inc hl
+            add a,#30   
+            ld (hl),a
+
+
+            call clear_fifo          
+            call clear_uart_buffer
+            ld hl,at_cipsntpcfg     //enable sntp and set zone
+            call at_send
+            ld hl,uart_buffer
+            call at_read
+            call anykeysimple
+            ret nz
+            IFDEF print            
+            ld	bc,#2000
+			ld	(txy51.cursor),bc
+            ld hl,uart_buffer+100
+            ld (hl),128+127			
+			ld hl,uart_buffer
+			call txy51.txy
+            ENDIF
+            call clear_fifo
+            call clear_uart_buffer 
+            ld hl,ate0              //dissable echo
+            call at_send           
+            ld hl,uart_buffer
+            call at_read
+            call anykeysimple
+            ret nz
+            ld e,#10               //time out
+            call clear_fifo
+1           push de
+            call clear_uart_buffer
+            ld hl,at_cipsntptime    //get time
+            call at_send
+            ld hl,uart_buffer
+            call at_read
+            pop de
+            dec e
+            ret z
+            call anykeysimple
+            ret nz            
+
+            ld hl,uart_buffer+50-17
+            ld a,(hl)
+            cp "1"              //test epoche0 - year 1970
+            jr z,1B
+            IFDEF print  
+            ld	bc,#3000
+			ld	(txy51.cursor),bc
+            ld hl,uart_buffer+100
+            ld (hl),128+127			
+			ld hl,uart_buffer
+			call txy51.txy
+            ENDIF
+
+            ld hl,uart_buffer+48-17    //sec1
+            ld e,#30
+            ld a,(hl)
+            sub e
+            ld bc,#0003
+            out (c),a
+            dec hl                  //sec10
+            ld a,(hl)
+            sub e
+            inc b                   //port #0103
+            out (c),a           
+
+            ld hl,uart_buffer+45-17    //min1
+            ld a,(hl)
+            sub e
+            inc b                   //port #0203
+            out (c),a
+            dec hl                  //min10
+            ld a,(hl)
+            sub e
+            inc b                   //port #0303
+            out (c),a
+
+            ld hl,uart_buffer+42-17    //hour1
+            ld a,(hl)
+            sub e
+            inc b                   //port #0403
+            out (c),a
+            dec hl                  //hour10
+            ld a,(hl)
+            sub e
+            inc b                   //port #0503
+            out (c),a
+
+            ld hl,uart_buffer+39-17    //day1
+            ld a,(hl)
+            sub e
+            inc b                   //port #0603
+            out (c),a
+            dec hl                  //day10
+            ld a,(hl)
+            sub e
+            inc b                   //port #0703
+            out (c),a
+
+            ld hl,uart_buffer+53-17    //year1
+            ld a,(hl)
+            sub e
+            ld bc,#0A03             //port #0A03
+            out (c),a
+            dec hl                  //year10
+            ld a,(hl)
+            sub e
+            inc b                   //port #0B03
+            out (c),a
+
+            ld c,12                 //month search for 12 months
+            ld de,months
+8           ld hl,uart_buffer+34-17    //monts            
+            ld a,(hl)
+            ld b,a
+            ld a,(de)
+            cp b
+            jr nz,3F
+            inc hl,de
+            ld a,(hl)
+            ld b,a
+            ld a,(de)
+            cp b
+            jr nz,2F
+            inc hl,de
+            ld a,(hl)
+            ld b,a
+            ld a,(de)
+            cp b
+            jr nz,1F
+            jr 4F //OK
+                        
+
+            //wrong string
+3           inc de
+2           inc de   
+1           inc de          
+            inc de
+            inc de
+            dec c
+            jr nz,8B
+            jr 5F           //string not search, don't change weekday
+4           inc de
+            ld a,(de)
+            ld bc,#0803             //port #0803
+            out (c),a
+            inc de
+            ld a,(de)
+            inc b                   //port #0903
+            out (c),a
+5
+            ld c,7                  //weekday search for 7 days
+            ld de,days
+1           ld hl,uart_buffer+30-17    //weekday            
+            ld a,(hl)
+            ld b,a
+            ld a,(de)
+            cp b
+            jr nz,3F
+            inc hl,de
+            ld a,(hl)
+            ld b,a
+            ld a,(de)
+            cp b
+            jr nz,2F
+            jr 4F //OK
+                        
+
+            //wrong string
+3           inc de
+2           inc de            
+            inc de
+            dec c
+            jr nz,1B
+            jr 5F           //string not search, don't change weekday
+4           inc de
+            ld a,(de)
+            ld bc,#0C03
+            out (c),a
+5 
+        
+            ld hl,ate1          //enable echo
+            call at_send
+            ld hl,uart_buffer
+            call at_read
+            call anykeysimple
+            ret nz
+
+            call clear_fifo
+/*            ld hl,at_rst        //at+rst
+            call at_send
+*/
+            ld a,1
+            ld (syn_OK),a
+            ret                 
+
+
+at_send		ld bc,#133B			// wifi ZXi TX port; HL-string of AT command
+            ld de,#0000         // timeout value
+1								
+			dec de
+            ld a,d
+            or e
+            ret z               // timeout
+            in a,(c)
+			bit 1,a				// bit 1 = TX status: ‘1’ when the TX is still transmitting the last byte or ‘0’ when the TX is idle				
+            jr nz,1B	    	// timeout must be here			
+			
+			ld a,(hl)			
+			or a
+			ret z               // test end of string
+			out (c),a
+			inc hl	
+			jr 1B
+            
+at_read     ld bc,#133B			// wifi ZXi TX port; hl-read buffer (2048)
+            ld a,#80            // read max 128bytes
+            ld (read_bytes_counter+1),a
+            ld de,#0000         // timeout                        
+2           dec de
+            ld a,d
+            or e
+            ret z               // timeout
+            
+            call anykeysimple
+            ret nz
+
+            in a,(c)
+			bit 0,a				// bit 0 = RX status: ‘0’ if the buffer is empty, ‘1’ if there is a data to be collected
+            jr z,2B             //wait for respone
+                                //NZ-data are in FIFO
+
+1           ld bc,#133B			// wifi ZXi TX port; hl-read buffer (2048)
+            in a,(c)
+			bit 0,a				// bit 0 = RX status: ‘0’ if the buffer is empty, ‘1’ if there is a data to be collected	
+			jr nz,4F            
+            // buffer is empty
+            ld de,#0000         // timeout                        
+3           dec de
+            ld a,d
+            or e
+            ret z               // timeout
+           
+            call anykeysimple
+            ret nz
+
+            in a,(c)            // second round
+			bit 0,a				// bit 0 = RX status: ‘0’ if the buffer is empty, ‘1’ if there is a data to be collected	
+			jr z,3B             // Z-buffer is empty
+            // second round done ok
+4           inc b               // port #143B
+            in a,(c)
+            ld (hl),a
+            inc hl
+read_bytes_counter            ld a,#80
+            dec a
+            ld (read_bytes_counter+1),a
+            ret z               // read max X bytes
+            jr 1B  
+
+clear_fifo  ld bc,g_ZXi_port0
+            ld a,#30
+            out (c),a
+            ld a,#01
+            inc b
+            out (c),a
+            ld bc,#133B			// wifi ZXi TX port; hl-read buffer (2048)
+            in a,(c)
+			bit 0,a				// bit 0 = RX status: ‘0’ if the buffer is empty, ‘1’ if there is a data to be collected
+            jr nz,clear_fifo
+            ret
+
+anykeysimple
+            xor a
+            in	a, (#FE)
+			cpl
+			and	1Fh
+			ret //NZ-pressed
+
+clear_uart_buffer    
+            ld hl,uart_buffer
+            ld de,uart_buffer+1
+            ld bc,99
+            ld (hl),32
+            ldir
+            ret
+syn_OK          db 0            
+at              db "AT",#D,#A,0
+ate0		    db "ATE0",#D,#A,0
+ate1		    db "ATE1",#D,#A,0
+at_cipsntpcfg	db "AT+CIPSNTPCFG=1,01" //nula muze byt znamenko minus, dalsi pozice je na GMT offset
+	            db 44,34,"tik.cesnet.cz",34,44,34 //44-";34-
+		        db "time.nist.gov",34,44,34,"cz.pool.ntp.org",34,#D,#A,0
+at_cipsntptime	db "AT+CIPSNTPTIME?",#D,#A,0
+at_rst          db "AT+RST",13,10
+
+days		db	"Mo",1,"Tu",2,"We",3,"Th",4
+		    db	"Fr",5,"Sa",6,"Su",0
+
+months		db	"Jan",1,0,"Feb",2,0,"Mar",3,0,"Apr",4,0,"May",5,0,"Jun",6,0
+		    db	"Jul",7,0,"Aug",8,0,"Sep",9,0,"Oct",0,1,"Nov",1,1,"Dec",2,1
+
+uart_buffer equ 32768
+            
