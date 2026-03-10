@@ -1916,7 +1916,7 @@ TEXT4S 		db 16,71,"1:",16,6,"divSD - esxDOS boot ",16,71,"  ",16,6,"          ",
 TEXT2	 	db 16,71,"2:",16,6,"DivSD   ",16,71,"@:",16,6,"DivIDE  "
 			dc " "
 //TEXT3    	db 16,71,"3:",16,6,"Ultimate BSDOS & esxDOS ",16,71,"d:",16,7,"Dev+ ",16,71,"t:",16,7,"Diag ",16,71,"break:",16,7,"ZXROM  "
-TEXT3    	db 16,71,"CapsLock: ",16,6,"esxDOS-NMI menu ",16,71,"d:",16,7,"Dev+ ",16,71,"t:",16,7,"Diag ",16,71,"break:",16,7,"ZXROM  "
+TEXT3    	db 16,71,"CapsLock:",16,6,"esxNMI   ",16,71,"d:",16,7,"Dev+ ",16,71,"t:",16,7,"Diag ",16,71,"break:",16,7,"ZXROM(no DOS)"
 
 			dc " "
 //TEXT1    	dc 16,69,"MB03+ Ultimate firmware 1.28"
@@ -1942,7 +1942,7 @@ HW5			db 16,7,"LED matrix ",16,3,"| ",16,7,"joystick ",16,3,"| ",16,7,"stereo au
 
 //HW1S		dc 16,67,"HARDWARE: "
 			//dc 16,7,"3.1"
-HW2S		db 16,7,"RAM 4MB ",16,3,"| ",16,7,"G. Sound RAM 2MB ",16,3,"| ",16,7,"FLASH 1MB ",16,3,"| ",16,7,"FRAM 8KB"	
+HW2S		db 16,7,"RAM 4MB ",16,3,"| ",16,7,"GenSound RAM 2MB ",16,3,"| ",16,7,"FLASH 1MB ",16,3,"| ",16,7,"FRAM 8KB"	
 			dc 16,7," "		
 HW3S		db 16,7,"divSD ",16,3,"| ",16,7,"uSD  ",16,3,"| ",16,7,"USB Keyboard  ",16,3,"| ",16,7,"USB Mouse ",16,3,"| ",16,7,"NMI"	
 			dc 16,7," "	
