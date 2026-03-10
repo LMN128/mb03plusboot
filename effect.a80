@@ -37,14 +37,14 @@ nn2	ld	b,h
 
 	ld a,h			;LMN
 	cp 32			;LMN lenght
-	jr z, end		;LMN
+	jr nc, end		;LMN
 	
 	ldi
 	ex	de,hl
 	ld	b,#1e		;LMN (was #20) speed
 wait	djnz	wait
 	jp	nn2
-end
+end ret
 	endmodule
 ;		ret   ; for testing
 ;	OUTEND
