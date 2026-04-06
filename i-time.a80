@@ -1,5 +1,6 @@
 //lze vyuzit test pripojeni k AP pres AT+CIPSTATUS
-//            DEFINE  print 
+//            DEFINE  print
+uart_buffer equ 32768
 i_time    
             xor a
             ld (syn_OK),a
@@ -10,44 +11,55 @@ i_time
             ld (hl),0
             ldir
             ENDIF
-            call clear_fifo
-            call clear_uart_buffer
-            ld hl,ate1          //enable echo
+            call clear_fifo           
+            ld hl,ate0           //disable echo
             call at_send
+            call clear_uart_buffer
             ld hl,uart_buffer
+            ld a,16              //read max 16 bytes  
             call at_read
             IFDEF print  
             ld	bc,#0000
 			ld	(txy51.cursor),bc			
-			ld hl,uart_buffer+100
+			ld hl,uart_buffer+50
             ld (hl),128+127
             ld hl,uart_buffer
 			call txy51.txy
             ENDIF
             call clear_fifo
-            call clear_uart_buffer
             ld hl,at            //AT
             call at_send
+            call clear_uart_buffer
             ld hl,uart_buffer
+            ld a,16              //read max 16 bytes
             call at_read
             IFDEF print  
             ld	bc,#1000
 			ld	(txy51.cursor),bc			
-			ld hl,uart_buffer+100
+			ld hl,uart_buffer+50
             ld (hl),128+127
             ld hl,uart_buffer
 			call txy51.txy
             ENDIF
             // test if WiFi respone
-            ld hl,uart_buffer
+            ld hl,uart_buffer+2
             ld a,(HL)
-            cp "A"
+            cp "O"
             ret nz
             inc hl
             ld a,(HL)
-            cp "T"
+            cp "K"
             ret nz
 
+            /*call clear_fifo
+            ld hl,ate0              //dissable echo
+            call at_send
+            call clear_uart_buffer           
+            ld hl,uart_buffer
+            ld a,8              //read max 8 bytes
+            call at_read
+            call anykeysimple
+            ret nz*/
 
             ld	bc,ZXi_port0		//find GMT zone
             ld  hl,at_cipsntpcfg+16  //0 or - GMT chars in AT command
@@ -67,36 +79,31 @@ gmt_plus	ld	(hl),"0"
 
 
             call clear_fifo          
-            call clear_uart_buffer
             ld hl,at_cipsntpcfg     //enable sntp and set zone
             call at_send
+            call clear_uart_buffer
             ld hl,uart_buffer
+            ld a,16              //read max 16 bytes
             call at_read
             call anykeysimple
             ret nz
             IFDEF print            
             ld	bc,#2000
 			ld	(txy51.cursor),bc
-            ld hl,uart_buffer+100
+            ld hl,uart_buffer+50
             ld (hl),128+127			
 			ld hl,uart_buffer
 			call txy51.txy
             ENDIF
-            call clear_fifo
-            call clear_uart_buffer 
-            ld hl,ate0              //dissable echo
-            call at_send           
-            ld hl,uart_buffer
-            call at_read
-            call anykeysimple
-            ret nz
-            ld e,#10               //time out
-            call clear_fifo
-1           push de
-            call clear_uart_buffer
+
+            ld e,#20               //number of attempts to obtain the time
+1           call clear_fifo
+            push de
             ld hl,at_cipsntptime    //get time
             call at_send
+            call clear_uart_buffer
             ld hl,uart_buffer
+            ld a,48              //read max 48 bytes
             call at_read
             pop de
             dec e
@@ -106,12 +113,15 @@ gmt_plus	ld	(hl),"0"
 
             ld hl,uart_buffer+50-17
             ld a,(hl)
-            cp "1"              //test epoche0 - year 1970
-            jr z,1B
+            cp "2"              //test epoche0 - year 1970
+            jr z,2F
+            call delay
+            jr 1B   
+2
             IFDEF print  
             ld	bc,#3000
 			ld	(txy51.cursor),bc
-            ld hl,uart_buffer+100
+            ld hl,uart_buffer+50
             ld (hl),128+127			
 			ld hl,uart_buffer
 			call txy51.txy
@@ -175,7 +185,7 @@ gmt_plus	ld	(hl),"0"
 
             ld c,12                 //month search for 12 months
             ld de,months
-8           ld hl,uart_buffer+34-17    //monts            
+8           ld hl,uart_buffer+34-17    //months            
             ld a,(hl)
             ld b,a
             ld a,(de)
@@ -204,7 +214,7 @@ gmt_plus	ld	(hl),"0"
             inc de
             dec c
             jr nz,8B
-            jr 5F           //string not search, don't change weekday
+            jr 5F           //string not search, don't change month
 4           inc de
             ld a,(de)
             ld bc,#0803             //port #0803
@@ -243,14 +253,23 @@ gmt_plus	ld	(hl),"0"
             ld bc,#0C03
             out (c),a
 5 
-        
+            call clear_fifo                 
             ld hl,ate1          //enable echo
             call at_send
+            call clear_uart_buffer             
             ld hl,uart_buffer
+            ld a,16              //read max 16 bytes
             call at_read
             call anykeysimple
             ret nz
-
+            IFDEF print  
+            ld	bc,#3800
+			ld	(txy51.cursor),bc
+            ld hl,uart_buffer+50
+            ld (hl),128+127			
+			ld hl,uart_buffer
+			call txy51.txy
+            ENDIF
             call clear_fifo
 /*            ld hl,at_rst        //at+rst
             call at_send
@@ -279,7 +298,7 @@ at_send		ld bc,#133B			// wifi ZXi TX port; HL-string of AT command
 			jr 1B
             
 at_read     ld bc,#133B			// wifi ZXi TX port; hl-read buffer (2048)
-            ld a,#80            // read max 128bytes
+//            ld a,#80            // read max 128bytes
             ld (read_bytes_counter+1),a
             ld de,#0000         // timeout                        
 2           dec de
@@ -287,8 +306,11 @@ at_read     ld bc,#133B			// wifi ZXi TX port; hl-read buffer (2048)
             or e
             ret z               // timeout
             
-            call anykeysimple
-            ret nz
+//            call anykeysimple
+//            ret nz
+            //pause
+            ex (sp),hl           
+            ex (sp),hl 
 
             in a,(c)
 			bit 0,a				// bit 0 = RX status: ‘0’ if the buffer is empty, ‘1’ if there is a data to be collected
@@ -300,14 +322,14 @@ at_read     ld bc,#133B			// wifi ZXi TX port; hl-read buffer (2048)
 			bit 0,a				// bit 0 = RX status: ‘0’ if the buffer is empty, ‘1’ if there is a data to be collected	
 			jr nz,4F            
             // buffer is empty
-            ld de,#0000         // timeout                        
+            ld de,#0200         // shorter timeout due to 115200 baud rate                       
 3           dec de
             ld a,d
             or e
             ret z               // timeout
            
-            call anykeysimple
-            ret nz
+//            call anykeysimple
+//            ret nz
 
             in a,(c)            // second round
 			bit 0,a				// bit 0 = RX status: ‘0’ if the buffer is empty, ‘1’ if there is a data to be collected	
@@ -345,10 +367,31 @@ anykeysimple
 clear_uart_buffer    
             ld hl,uart_buffer
             ld de,uart_buffer+1
-            ld bc,99
+            ld bc,64
             ld (hl),32
             ldir
             ret
+
+delay       push af
+            push bc
+            push de
+            ld e,1  
+delay_o
+            ld bc,0
+delay_loop
+            call anykeysimple
+            jr nz,delay_end
+            dec bc
+            ld  a,b
+            or  c
+            jr  nz,delay_loop
+            dec e
+            jr  nz,delay_o
+delay_end   pop de
+            pop bc
+            pop af
+            ret
+
 syn_OK          db 0            
 at              db "AT",#D,#A,0
 ate0		    db "ATE0",#D,#A,0
@@ -365,5 +408,4 @@ days		db	"Mo",1,"Tu",2,"We",3,"Th",4
 months		db	"Jan",1,0,"Feb",2,0,"Mar",3,0,"Apr",4,0,"May",5,0,"Jun",6,0
 		    db	"Jul",7,0,"Aug",8,0,"Sep",9,0,"Oct",0,1,"Nov",1,1,"Dec",2,1
 
-uart_buffer equ 32768
             
